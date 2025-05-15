@@ -1,9 +1,9 @@
 CC = clang
 CFLAGS += -Wall -Wextra -Werror --std=c17
 
-pfusch: pfusch.c
+graph: main.c graph.c
 
 clean:
-	rm -f pfusch *.o
+	rm -f graph *.o
 
 .PHONY: clean
