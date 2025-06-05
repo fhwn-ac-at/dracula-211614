@@ -1,9 +1,10 @@
 CC = clang
 CFLAGS += -Wall -Wextra -Werror --std=c17
 
-graph: main.c graph.c
+random: random.c
+graph: graph_main.c graph.c
 
 clean:
-	rm -f graph *.o
+	rm -f random *.o
 
 .PHONY: clean
