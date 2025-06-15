@@ -72,3 +72,7 @@ void sals_clear(snakesandladders_t* sals) {
 snakeorladder_t* sals_add(snakesandladders_t* sals, const snakeorladder_t* sol) {
     return sals ? array_add(&sals->array, sol) : 0;
 }
+
+snakeorladder_t* sals_get(snakesandladders_t* sals, size_t index) {
+    return sals ? array_get(&sals->array, index) : 0;
+}

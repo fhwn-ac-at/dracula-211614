@@ -9,7 +9,31 @@ The C library `getopt.h` is used for processing command line arguments.
 When running the program with the `-h` or `--help` option a help text is printed and the program terminates.
 
 ```
+snakesandladders 0.1.0
+Usage: ./snakesandladders [options] <snake-or-ladder>...
 
+  <snake-or-ladder>         A string containing two positive integers separated by a '-' character. Format: a-b.
+                             a is the index of the starting cell and b is the index of the ending cell.
+                             Ladders start in a cell before the ending cell (a < b) and propel the player forward from a to b.
+                             Snakes start in a cell after the ending cell (a > b) and propel the player backward from a to b.
+                             All specified snakes and ladders must not end in the last cell of the playing field and
+                             they must not start/end in the same cell as themselves or any other snake or ladder. (i.e. overlap is disallowed)
+                             e.g. 0-16 13-45 23-27 15-3 48-20 54-11
+
+options:
+  -h, --help                Prints this help text and terminates the program.
+  -c, --config-file val     The filepath of the configuration file which is processed the same way as the command line arguments
+                             are processed after splitting the file content similarly as e.g. the linux bash splits it's input.
+                             The option -c, --config-file is not allowed inside a configuration file.
+                             Non-option argument values that appear in the cli arguments before the -c, --config-file option are lost
+                             because the necessary argument reordering fails after processing the configuration file.
+  -x, --width val           The width of the playing field which must be an integer value >= 2. The default value is 10.
+  -y, --height val          The height of the playing field which must be an integer value >= 2. The default value is 10.
+  -s, --die-sides val       The number of sides the used die has which must be an integer value >= 1. The default value is 6.
+  -e, --exact-ending        Enables the exact ending requirement. To end a game the player must land exactly on the last cell
+                             of the playing field. If a rolled die would overshoot the last cell the player is not moved.
+  -d, --distribution val    The distribution when generating a random number in a die. Allowed values are:
+                             - u, uniform: A uniform distribution (default)
 ```
 
 ## Assignment: 6th Assignment

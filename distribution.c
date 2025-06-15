@@ -1,13 +1,20 @@
 #include "distribution.h"
 
-static distribution_t distribution = DISTR_UNIFORM;
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
 
-distribution_t distribution_set(distribution_t newdist) {
-    distribution_t prevdist = distribution;
-    distribution = newdist;
-    return prevdist;
-}
+distribution_info_t distribution_infos[DISTRIBUTION_COUNT] = {
+    { 0  , 0         },
+    { 'u', "uniform" }
+};
 
-distribution_t distribution_get() {
-    return distribution;
+distribution_t strtodistr(const char* str) {
+    if (!str)
+        return DISTR_NONE;
+    bool isshort = str[0] != '\0' && str[1] == '\0';
+    for (size_t i = 1; i < DISTRIBUTION_COUNT; i++)
+        if ((isshort && str[0] == distribution_infos[i].shortname) || strcmp(str, distribution_infos[i].longname) == 0)
+            return i;
+    return DISTR_NONE;
 }

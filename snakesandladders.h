@@ -77,3 +77,9 @@ void sals_clear(snakesandladders_t* sals);
  * @return The address of the newly added element, 0 if it could not be added.
  */
 snakeorladder_t* sals_add(snakesandladders_t* sals, const snakeorladder_t* sol);
+
+/**
+ * Retrieves the address of the snakeorladder_t at the given index in the snakesandladders_t's array.
+ * @return The address of the snakeorlatter_t at the given index.
+ */
+snakeorladder_t* sals_get(snakesandladders_t* sals, size_t index);

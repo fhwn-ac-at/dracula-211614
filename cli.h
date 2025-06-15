@@ -3,6 +3,7 @@
 #include "distribution.h"
 #include "snakesandladders.h"
 
+#include <getopt.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -23,10 +24,31 @@
 #define OPTVAL_DISTRIBUTION_DEFAULT DISTR_UNIFORM   // The default distribution of randomly generated values
 
 /**
+ * Flags for every cli argument setting.
+ */
+typedef enum cli_args_flag_t {
+    CLIAFLAG_NONE             = 0,
+    CLIAFLAG_HELP             = 1 << 0,
+    CLIAFLAG_CONFIGFILE       = 1 << 1,
+    CLIAFLAG_WIDTH            = 1 << 2,
+    CLIAFLAG_HEIGHT           = 1 << 3,
+    CLIAFLAG_DIE_SIDES        = 1 << 4,
+    CLIAFLAG_EXACT_ENDING     = 1 << 5,
+    CLIAFLAG_DISTRIBUTION     = 1 << 6,
+    CLIAFLAG_SNAKESANDLADDERS = 1 << 7,
+} cli_args_flag_t;
+
+/**
+ * Type used to store multiple cli_args_flag_ts (bitwise ORed)
+ */
+typedef uint8_t cli_args_flags_t; 
+
+/**
  * Command line interface arguments.
  * Can be parsed via the cli_parse function. 
  */
 typedef struct cli_args_t {
+    cli_args_flags_t setargsflags;          // Flags that indicate which values where set by the user (bitwise ORed cli_args_flag_ts)
     char* configfile;                       // The filepath of the configuration file
     size_t width;                           // The width of the playing field
     size_t height;                          // The height of the playing field
@@ -54,18 +76,70 @@ typedef struct filepos_t {
 } filepos_t;
 
 /**
- * Parses the given comand-line arguments
- * @param argc The number of arguments.
+ * Struct to store the state of getopt.
+ */
+typedef struct getopt_state_t {
+    int optind;
+    char* optarg;
+    int optopt;
+} getopt_state_t;
+
+/**
+ * Creates a copy of the current getopt state.
+ * @return The current getopt state.
+ */
+getopt_state_t getopt_state();
+
+/**
+ * Sets the getopt state to the given state.
+ * @param state The state that getopt should be set to. If not given no action is performed.
+ */
+void getopt_state_set(const getopt_state_t* state);
+
+/**
+ * Frees the contents of the given cli_args freeing it's snakes and ladders and clearing all values.
+ * @param cli_args The cli_args whose content should be freed.
+ */
+void cli_args_free(cli_args_t* cli_args);
+
+/**
+ * Parses the given comand-line arguments by forwarding argc and argv to the cli_parse_args function.
+ * It's parameter initoptind is set to 1 and isconfigfile is set to false.
+ * @param argc The argument count.
  * @param argv The argument values that should be parsed.
+ * @return The parsed arguments.
+ */
+cli_args_t cli_parse(int argc, char* argv[]);
+
+/**
+ * Parses the given comand-line arguments
+ * @param argc The argument count.
+ * @param argv The argument values that should be parsed.
+ * @param intioptind The index of the first argument in the argv array that should be parsed.
+ * The default is 1 which skips the first argument (because this is commonly the program path).
  * @param isconfigfile Indicates whether these arguments came from a config file. If so the -c, --config-file option is disabled.
  * @return The parsed arguments.
  */
-cli_args_t cli_parse(int argc, char* argv[], bool isconfigfile);
+cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigfile);
+
+/**
+ * Parses the options of the given comand-line arguments by using the getopt_long function.
+ * If no cli_args is given no action is performed.
+ * @param cli_args The cli arguments the read options should be stored in.
+ * @param argc The argument count.
+ * @param argv The argument values that should be parsed.
+ * @param initoptind The value optind is set to before parsing the arguments. This is the index of the first argument to
+ * parse in the argv array. The default is 1 which skips the first argument (because this is commonly the program path).
+ * @param optstring The option string given to the getopt_long function as parameter optstring.
+ * @param longopt The long options given to the getopt_long function as parameter longopts.
+ * @returns The given cli_args in which the read options are stored, 0 if no cli_args was given.
+ */
+cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int initoptind, const char* optstring, const struct option* longopts);
 
 /**
  * Prints the cli arguments.
  */
-void cli_args_print(const cli_args_t* cli_args);
+void cli_args_print(cli_args_t* cli_args);
 
 /**
  * Prints the command line interface help text about the pfusch interpreter.
