@@ -4,24 +4,59 @@
 #include <stddef.h>
 
 /**
+ * Function pointer type of a comparator function that compares the two values a and b which are both of size valuesize.
+ * @param valuesize The size of the given values.
+ * @param a The first value.
+ * @param b The second value.
+ * @return 0 if the values are considered equal, a negative value if a < b, a positive value if a > b.
+ */
+typedef int(*comparator_fn_t)(size_t valuesize, const void* a, const void* b);
+
+/**
  * Struct for an array capable of holding elements of arbitrary size in a contiguous memory block.
  * The elementsize should not be changed while the array is not empty unless the next action on the array is a clear or free.
- * If elementsize == 0 when it is needed by any array function (e.g. reserve, get, set, add) it is set to 1 as default.
+ * If elementsize == 0 when it is needed by any array function (e.g. array_reserve, array_get, array_set, array_add) it is set to 1 as default.
+ * If a comparison is required (e.g. in array_find) the comparator function is used, if it is 0 the byte_compare function is used as a fallback.
  */
 typedef struct array_t {
-    void* data;                 // A pointer to the beginning of the data (elements) memory block.
-    size_t capacity;            // The number of elements that can be stored in the currently allocated data memory block.
-    size_t size;                // The number of elements currently stored in the data memory block.
-    size_t elementsize;         // The size of each element the array can store.
+    void* data;                     // A pointer to the beginning of the data (elements) memory block.
+    size_t capacity;                // The number of elements that can be stored in the currently allocated data memory block.
+    size_t size;                    // The number of elements currently stored in the data memory block.
+    size_t elementsize;             // The size of each element the array can store.
+    comparator_fn_t comparator;     // The function used for value comparisons.
 } array_t;
 
 /**
- * Creates a new array with the given initial capacity and the given elementsize.
+ * Compares the two values a and b which are both of size valuesize.
+ * If both values have the same sequence of bytes they are considered equal (return 0).
+ * If the first non-equal byte is smaller in a than the byte in b a is considered smaller than b (return negative value).
+ * If the first non-equal byte is greater in a than the byte in b a is considered greater than b (return positive value).
+ * @param valuesize The size of the given values.
+ * @param a The first value.
+ * @param b The second value.
+ * @return 0 if the values are considered equal, a negative value if a < b, a positive value if a > b.
+ */
+int byte_compare(size_t valuesize, const void* a, const void* b);
+
+/**
+ * Compares the two values a and b which are both of size array->elementsize with the arrays value comparator.
+ * If array->comparator is not set or no array was given the byte_compare function is used for comparison instead.
+ * If no array was given the value size defaults to 1.
+ * @param array The array who's elementsize should be used in the comparator function.
+ * @param a The first value.
+ * @param b The second value.
+ * @return 0 if the values are considered equal, a negative value if a < b, a positive value if a > b.
+ */
+int array_value_compare(array_t* array, const void* a, const void* b);
+
+/**
+ * Creates a new array with the given initial capacity, elementsize and value comparator.
  * @param initcapacity The initial capacity of the array.
  * @param elementsize The size of a single element. If it equals 0 elementsize defaults to 1.
+ * @param comparator The comparator to use for value comparisons in this array.
  * @return The newly created array.
  */
-array_t array_create(size_t initcapacity, size_t elementsize);
+array_t array_create(size_t initcapacity, size_t elementsize, comparator_fn_t comparator);
 
 /**
  * Frees the given array by deallocating it's memory buffer and setting it's capacity, size and elementsize to 0.
@@ -82,3 +117,21 @@ void* array_set(array_t* array, size_t index, const void* element);
  * @return The address of the newly added element, 0 if it could not be added.
  */
 void* array_add(array_t* array, const void* element);
+
+/**
+ * Finds the first element in the array that equals the given element according to the array's value comparator function.
+ * If the array's value comparator is not set the byte_compare function is used as a fallback.
+ * @param array The array to search the element in.
+ * @param element The address of the value that should be found.
+ * @return The address of the found element in the array, 0 if no element in the array equaled the given element or no element or array was given.
+ */
+void* array_find(array_t* array, const void* element);
+
+/**
+ * Checks whether the given element is contained in the array. Equality of elements is checked with the array's value comparator function.
+ * If the array's value comparator is not set the byte_compare function is used as a fallback.
+ * @param array The array to search the element in.
+ * @param element The address of the value that should be found.
+ * @return true if the element was found in the array, false if no element in the array equaled the given element or no element or array was given.
+ */
+bool array_contains(array_t* array, const void* element);

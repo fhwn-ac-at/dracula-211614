@@ -3,18 +3,34 @@
 #include <stdlib.h>
 #include <string.h>
 
-array_t array_create(size_t initcapacity, size_t elementsize) {
+int byte_compare(size_t valuesize, const void* a, const void* b) {
+    if (!a || !b)
+        return a || b ? a ? 1 : -1 : 0;
+    for (size_t i = 0; i < valuesize; i++)
+        if (((char*)a)[i] != ((char*)b)[i])
+            return ((char*)a)[i] - ((char*)b)[i];
+    return 0;
+}
+
+int array_value_compare(array_t* array, const void* a, const void* b) {
+    return !array
+        ? byte_compare(1, a, b)
+        : (array->comparator ? array->comparator : byte_compare)(array->elementsize, a, b);
+}
+
+array_t array_create(size_t initcapacity, size_t elementsize, comparator_fn_t comparator) {
     if (elementsize == 0)
         elementsize = 1;
     void* data = initcapacity != 0 ? malloc(initcapacity * elementsize) : 0;
     return data
-        ? (array_t){ .elementsize = elementsize }
-        : (array_t){
+        ? (array_t){
             .data = data,
             .capacity = initcapacity,
             .size = 0,
-            .elementsize = elementsize
-        };
+            .elementsize = elementsize,
+            .comparator = comparator
+        }
+        : (array_t){ .elementsize = elementsize, .comparator = comparator };
 }
 
 void array_free_full(array_t* array) {
@@ -85,4 +101,17 @@ void* array_add(array_t* array, const void* element) {
             return 0;
     }
     return array_set(array, array->size++, element);
+}
+
+void* array_find(array_t* array, const void* element) {
+    if (!array || !element)
+        return 0;
+    for (size_t i = 0; i < array->size; i++)
+        if (array_value_compare(array, element, &array->data[i * array->elementsize]) == 0)
+            return &array->data[i * array->elementsize];
+    return 0;
+}
+
+bool array_contains(array_t* array, const void* element) {
+    return array_find(array, element);
 }

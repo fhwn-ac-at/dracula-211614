@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 /**
  * Struct containing two strings.
  */
@@ -31,3 +33,11 @@ const twostrs_t strsplitnextconst(const char* str, char splitchar);
  * @return The newly allocated buffer containing a copy of the given string, 0 if no string was given or no new buffer could be allocated.
  */
 char* strduplicate(const char* str);
+
+/**
+ * Checks whether the given character is a whitespace character
+ * ('\s' 0x20, '\t' 0x09, '\n' 0x0A, '\r' 0x0D, '\f' 0x0C, '\v' 0x0B)
+ * @param c The character to check.
+ * @return true if c is a whitespace character, false otherwise.
+ */
+bool iswhitespace(char c);

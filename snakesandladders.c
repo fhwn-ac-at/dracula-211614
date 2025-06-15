@@ -6,11 +6,11 @@
 #include <stdlib.h>
 
 bool issnake(snakeorladder_t* sol) {
-    return sol ? sol->a > sol->b : false;
+    return sol ? sol->src > sol->dst : false;
 }
 
 bool isladder(snakeorladder_t* sol) {
-    return sol ? sol->a < sol->b : false;
+    return sol ? sol->src < sol->dst : false;
 }
 
 snakeorladder_t strtosol(const char* str, int* error) {
@@ -33,14 +33,14 @@ snakeorladder_t strtosol(const char* str, int* error) {
         return (snakeorladder_t){};
     }
     snakeorladder_t sol = {};
-    int err = parse_uint64(twostrs.strs[0], &sol.a);
+    int err = parse_uint64(twostrs.strs[0], &sol.src);
     if (err != 0) {
         if (error)
             *error = err + 2;
         free(strdup);
         return (snakeorladder_t){};
     }
-    err = parse_uint64(twostrs.strs[1], &sol.b);
+    err = parse_uint64(twostrs.strs[1], &sol.dst);
     if (err != 0) {
         if (error)
             *error = err + 5;
@@ -54,7 +54,7 @@ snakeorladder_t strtosol(const char* str, int* error) {
 }
 
 snakesandladders_t sals_create(size_t initcapacity) {
-    return (snakesandladders_t){ array_create(initcapacity, sizeof(snakeorladder_t)) };
+    return (snakesandladders_t){ array_create(initcapacity, sizeof(snakeorladder_t), 0) };
 }
 
 void sals_free(snakesandladders_t* sals) {

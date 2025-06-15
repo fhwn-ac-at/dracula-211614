@@ -6,8 +6,8 @@
  * Struct for a snake or ladder.
  */
 typedef struct snakeorladder_t {
-    size_t a;       // The index of the starting cell
-    size_t b;       // The index of the ending cell
+    size_t src;       // The index of the starting cell
+    size_t dst;       // The index of the ending cell
 } snakeorladder_t;
 
 /**

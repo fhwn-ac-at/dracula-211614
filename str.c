@@ -29,3 +29,17 @@ char* strduplicate(const char* str) {
         return 0;
     return strcpy(newstr, str);
 }
+
+bool iswhitespace(char c) {
+    switch (c) {
+        case ' ':
+        case '\t':
+        case '\n':
+        case '\r':
+        case '\f':
+        case '\v':
+            return true;
+        default:
+            return false;
+    }
+}
