@@ -16,8 +16,8 @@ adjmat_t adjmat_create(size_t vertex_count, size_t edge_count, const edge_t* edg
         return adjmat;
     for (size_t i = 0; i < edge_count; i++) {
         const edge_t* edge = &edges[i];
-        adjmat.edges[edge->from * vertex_count + edge->to] = edge->weight;
-        adjmat.edges[edge->from + edge->to * vertex_count] = -edge->weight;
+        adjmat.edges[edge->from * vertex_count + edge->to] = 1;
+        adjmat.edges[edge->from + edge->to * vertex_count] = -1;
     }
     return adjmat;
 }

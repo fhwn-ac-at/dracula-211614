@@ -9,7 +9,6 @@
 typedef struct edge_t {
     size_t from;
     size_t to;
-    int32_t weight;
 } edge_t;
 
 /**

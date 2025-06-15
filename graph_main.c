@@ -1,3 +1,4 @@
+/*
 #include "graph.h"
 
 #define VERTEX_COUNT 8
@@ -21,3 +22,4 @@ int main(void) {
     adjmat_print(&adjmat);
     adjmat_delete(&adjmat);
 }
+*/
