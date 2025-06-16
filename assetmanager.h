@@ -6,30 +6,59 @@
 
 #include "array.h"
 
-// forward declarations
-typedef struct cli_args_t cli_args_t;
+/**
+ * The function pointer type of a function used to deallocate the data at the given address.
+ * @param data The address of the data that should be deallocated.
+ */
+typedef void(*deallocator_fn_t)(void* data);
+
+/**
+ * Struct for a single asset storing the address of the resource and the function pointer to the resource's deallocator function.
+ */
+typedef struct asset_t {
+    void* data;                     // The managed data of the asset
+    deallocator_fn_t deallocator;   // The deallocator used to deallocate the asset's data upon destruction.
+} asset_t;
 
 /**
  * Struct for the asset manager.
+ * If an asset has no data when it is released the deallocator is still executed but is given 0 as data pointer.
+ * If an asset has no deallocator when it is released the asset is removed from the manager but the data remains untouched.
  */
 typedef struct assetmanager_t {
-    array_t cli_args;          // The array with pointers to all assets of type cli_args_t
+    array_t assets;             // The array of the managed asset_ts
 } assetmanager_t;
 
 // The global instance of the asset manager.
 extern assetmanager_t assetmanager;
 
 /**
- * Frees all assets of the given asset manager.
- * If no asset manager was given no action is performed.
- * @param assetmanager The asset manager whose assets should be freed.
+ * Registers the assetmanager_free function as cleanup function with the atexit function.
+ * If it could not be registered as exit function an appropriate error
+ * message is output on stderr and the program is terminated with exit code 1.
+ * @return 0 if the function was successfully registered as exit function, otherwise the program is terminated with exit code 1.
  */
-void assetmanager_free(assetmanager_t* assetmanager);
+int assetmanager_register();
 
 /**
- * Adds the address of the given cli_args to the asset manager.
- * @param assetmanager The asset manager cli_args should be added to.
- * @param cli_args The address of the cli_args_t instance that should be added to the asset manager
- * @return The address of the added asset pointer.
+ * Frees all assets of the global asset manager.
+ * If no asset manager was given no action is performed.
  */
-cli_args_t** assetmanager_add_cli_args(assetmanager_t* assetmanager, cli_args_t* cli_args);
+void assetmanager_free();
+
+/**
+ * Adds the a new asset with the given data and deallocator to the global asset manager.
+ * The when the asset is freed the data is deallocated with the given deallocator function.
+ * A new asset is add even if no data or deallocator is given.
+ * @param data The address of the asset data that should be added to the asset manager.
+ * @param deallocator The deallocator that should be used to deallocate the asset data upon releasing the asset.
+ * @return The address of the added asset, 0 if it could not be added.
+ */
+asset_t* assetmanager_add(void* data, deallocator_fn_t deallocator);
+
+/**
+ * Adds the given asset to the global asset manager.
+ * @param asset The asset that should be added to the asset manager
+ * @return The address of the added asset, 0 if it could not be added.
+ */
+asset_t* assetmanager_add_asset(asset_t asset);

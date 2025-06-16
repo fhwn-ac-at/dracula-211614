@@ -30,10 +30,10 @@ typedef struct adjmat_t {
 adjmat_t adjmat_create(size_t vertex_count, size_t edge_count, const edge_t* edges);
 
 /**
- * Deletes the given adjacency matrix freeing it's edges and setting it's size and edge pointer to 0.
+ * Frees the given adjacency matrix freeing it's edges and setting it's size and edge pointer to 0.
  * @param adjmat The adjacency matrix that should be freed.
  */
-void adjmat_delete(adjmat_t* adjmat);
+void adjmat_free(adjmat_t* adjmat);
 
 /**
  * Prints the given adjacency matrix.

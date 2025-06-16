@@ -1,6 +1,7 @@
 #pragma once
 
 #include "distribution.h"
+#include "game.h"
 #include "snakesandladders.h"
 
 #include <getopt.h>
@@ -12,10 +13,10 @@
 
 #define OPTVAL_CONFIGFILE_DEFAULT 0                 // The default configuration file
 #define OPTVAL_WIDTH_DEFAULT 10ul                   // The default width of the playing field
-#define OPTVAL_WIDTH_MIN 2ul                        // The minimum width of the playing field
+#define OPTVAL_WIDTH_MIN GAME_WIDTH_MIN             // The minimum width of the playing field
 #define OPTVAL_WIDTH_MAX ULONG_MAX                  // The maximum width of the playing field
 #define OPTVAL_HEIGHT_DEFAULT 10ul                  // The default height of the playing field
-#define OPTVAL_HEIGHT_MIN 2ul                       // The minimum height of the playing field
+#define OPTVAL_HEIGHT_MIN GAME_HEIGHT_MIN           // The minimum height of the playing field
 #define OPTVAL_HEIGHT_MAX ULONG_MAX                 // The maximum height of the playing field
 #define OPTVAL_DIE_SIDES_DEFAULT 6ul                // The default number of sides the used die has
 #define OPTVAL_DIE_SIDES_MIN 1ul                    // The minimum number of sides the used die has

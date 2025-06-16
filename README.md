@@ -9,7 +9,7 @@ The C library `getopt.h` is used for processing command line arguments.
 When running the program with the `-h` or `--help` option a help text is printed and the program terminates.
 
 ```
-snakesandladders 0.1.0
+snakesandladders 0.1.1
 Usage: ./snakesandladders [options] <snake-or-ladder>...
 
   <snake-or-ladder>         A string containing two positive integers separated by a '-' character. Format: a-b.

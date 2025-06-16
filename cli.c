@@ -45,7 +45,7 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
         .distribution = OPTVAL_DISTRIBUTION_DEFAULT,
         .snakesandladders = sals_create(0)
     };
-    assetmanager_add_cli_args(&assetmanager, &args);
+    assetmanager_add(&args, (deallocator_fn_t)cli_args_free);
 
     // define options
     const char* optstring;
@@ -98,7 +98,6 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
             {
                 cli_args->setargsflags |= CLIAFLAG_HELP;
                 cli_help();
-                assetmanager_free(&assetmanager);
                 exit(0);
                 break;
             }
@@ -181,7 +180,6 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                 distribution_t distr = strtodistr(optarg);
                 if (distr == DISTR_NONE) {
                     fprintf(stderr, "%serror:%s invalid distribution string '%s'.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), optarg);
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 }
                 cli_args->distribution = distr;
@@ -190,13 +188,11 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
             case ':':
             {
                 fprintf(stderr, "%serror:%s missing value for option '%c'.\n", FMT(FMTVAL_FG_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
-                assetmanager_free(&assetmanager);
                 exit(1);
             }
             case '?':
             {
                 fprintf(stderr, "%serror:%s unknown option '%c'.\n", FMT(FMTVAL_FG_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
-                assetmanager_free(&assetmanager);
                 exit(1);
             }
         }
@@ -294,7 +290,6 @@ cli_configfile_args_t cli_read_configfile(const char* filepath) {
     FILE* file = fopen(filepath, "r");
     if (!file) {
         fprintf(stderr, "%serror:%s unable to read config file '%s'\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), filepath);
-        assetmanager_free(&assetmanager);
         exit(1);
     }
 
@@ -476,28 +471,23 @@ uint64_t cli_parse_opt_uint64(char opt, uint64_t valmin, uint64_t valmax) {
     switch (error) {
         case 1:
             fprintf(stderr, "%serror:%s -%c no string given.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), opt);
-            assetmanager_free(&assetmanager);
             exit(1);
         case 2:
             fprintf(stderr, "%serror:%s -%c value out of range (%s).\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), opt, optarg);
-            assetmanager_free(&assetmanager);
             exit(1);
         case 3:
         case 4:
             fprintf(stderr, "%serror:%s -%c not a number '%s'.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), opt, optarg);
-            assetmanager_free(&assetmanager);
             exit(1);
         default:
             break;
     }
     if (value < valmin) {
         fprintf(stderr, "%serror:%s -%c %lu less than minimum %lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), opt, value, valmin);
-        assetmanager_free(&assetmanager);
         exit(1);
     }
     if (value > valmax) {
         fprintf(stderr, "%serror:%s -%c %lu greater than maximum %lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), opt, value, valmax);
-        assetmanager_free(&assetmanager);
         exit(1);
     }
     return value;
@@ -515,49 +505,38 @@ void cli_read_sals(cli_args_t* args, int argc, char* argv[]) {
             switch (error) {
                 case 1:
                     fprintf(stderr, "no string given.\n");
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 2:
                     fprintf(stderr, "unable to duplicate the given string.\n");
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 3:
                     fprintf(stderr, "string does not contain the split character '-'.\n");
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 4:
                     fprintf(stderr, "value %sa%s out of range (overflow/underflow).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 5:
                     fprintf(stderr, "invalid characters in %sa%s (not a number).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 6:
                     fprintf(stderr, "remaining characters after number in string for %sa%s.\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 7:
                     fprintf(stderr, "value %sb%s out of range (overflow/underflow).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 8:
                     fprintf(stderr, "invalid characters in %sb%s (not a number).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 case 9:
                     fprintf(stderr, "remaining characters after number in string for %sb%s.\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
-                    assetmanager_free(&assetmanager);
                     exit(1);
                 default:
                     fprintf(stderr, "unknown error.\n");
-                    assetmanager_free(&assetmanager);
                     exit(1);
             }
         }
         if (args && !sals_add(&args->snakesandladders, &sol)) {
             fprintf(stderr, "%serror:%s unable to add snake-or-ladder '%s' to array [capacity: %lu].\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), argv[i], args->snakesandladders.array.capacity);
-            assetmanager_free(&assetmanager);
             exit(1);
         }
     }
