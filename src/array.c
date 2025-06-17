@@ -46,9 +46,7 @@ void array_free(array_t* array) {
         return;
     if (array->data)
         free(array->data);
-    array->data = 0;
-    array->capacity = 0;
-    array->size = 0;
+    *array = (array_t){};
 }
 
 void array_clear(array_t* array) {
@@ -57,7 +55,7 @@ void array_clear(array_t* array) {
     array->size = 0;
 }
 
-bool array_isempty(array_t* array) {
+bool array_isempty(const array_t* array) {
     return array ? array->size == 0 : true;
 }
 
@@ -114,4 +112,14 @@ void* array_find(array_t* array, const void* element) {
 
 bool array_contains(array_t* array, const void* element) {
     return array_find(array, element);
+}
+
+bool array_rmv(array_t* array, size_t index) {
+    if (!array || index >= array->size)
+        return false;
+    for (; index + 1 < array->size; index++)
+        array_set(array, index, array_get(array, index + 1));
+    memset(array_get(array, index), 0, array->elementsize);
+    array->size--;
+    return true;
 }

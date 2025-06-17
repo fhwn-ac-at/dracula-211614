@@ -3,7 +3,7 @@
 #include "assetmanager.h"
 #include "cvts.h"
 #include "macros.h"
-#include "parsenum.h"
+#include "numbers.h"
 #include "str.h"
 
 #include <stdlib.h>
@@ -23,9 +23,25 @@ void getopt_state_set(const getopt_state_t* state) {
     #endif
 }
 
+filepos_t filepos_create(const char* filepath) {
+    return (filepos_t){ filepath, 1, 1 };
+}
+
+void filepos_advance(filepos_t* filepos, char character) {
+    if (!filepos)
+        return;
+    if (character == '\n') {
+        filepos->row++;
+        filepos->col = 1;
+    } else {
+        filepos->col++;
+    }
+}
+
 void cli_args_free(cli_args_t *cli_args) {
     if (!cli_args)
         return;
+    distr_free(&cli_args->distribution);
     sals_free(&cli_args->snakesandladders);
     *cli_args = (cli_args_t){};
 }
@@ -75,6 +91,46 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
     // parse options
     cli_parse_opts(&args, argc, argv, initoptind, optstring, longopts);
 
+    if (!isconfigfile) {
+        // validate and build distribution (build preset / validate and complete custom distribution)
+        int error = distr_build(&args.distribution, args.die_sides);
+        if (error) {
+            fprintf(stderr, "%serror:%s invalid distribution. ", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
+            switch (error) {
+                case 1:
+                    fprintf(stderr, "no distribution given.\n");
+                    exit(1);
+                case 2:
+                    fprintf(stderr, "unknown preset.\n");
+                    exit(1);
+                case 3:
+                    fprintf(stderr, "more weights than die sides.\n");
+                    exit(1);
+                case 4:
+                    fprintf(stderr, "unable to add weight.\n");
+                    exit(1);
+                case 5:
+                    fprintf(stderr, "die sides must be even but is %lu.\n", args.die_sides);
+                    exit(1);
+                case 6:
+                    fprintf(stderr, "die sides must not be 0.\n");
+                    exit(1);
+                default:
+                    fprintf(stderr, "unkown error\n");
+                    exit(1);
+            }
+        }
+        // check if sum of distribution weights is 0
+        bool iszero = true;
+        for (size_t i = 0; iszero && i < args.distribution.weights.size; i++)
+            if (*(size_t*)array_get(&args.distribution.weights, i) != 0)
+                iszero = false;
+        if (iszero) {
+            fprintf(stderr, "%serror:%s invalid distribution. weight sum is 0.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
+            exit(1);
+        }
+    }
+
     // read snakes and ladders given as arguments
     cli_read_sals(&args, argc - optind, argv + optind);
     if (optind != argc)
@@ -103,9 +159,6 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
             }
             case 'c':
             {
-                // TODO read config file
-                printf("-%c // TODO //\n", opt);
-
                 cli_args->setargsflags |= CLIAFLAG_CONFIGFILE;
 
                 // store previous getopt state
@@ -114,16 +167,20 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                 // read config file as arguments
                 cli_configfile_args_t config_args = cli_read_configfile(optarg);
 
+                #ifdef DEBUG
                 printf("config_args[%d] { ", config_args.argc);
-                for (size_t i = 0; i < config_args.argc; i++)
+                for (int i = 0; i < config_args.argc; i++)
                     printf("\"%s\"%s ", config_args.argv[i], i != config_args.argc - 1 ? "," : "");
                 printf("}\n");
+                #endif
 
                 // parse config file arguments
                 cli_args_t config_cli_args = cli_parse_args(config_args.argc, config_args.argv, 0, true);
+                #ifdef DEBUG
                 printf("config_");
                 cli_args_print(&config_cli_args);
-                
+                #endif
+
                 // transfer config file cli arguments into cli arguments (only argument settings that where set in config file)
                 if (config_cli_args.setargsflags & CLIAFLAG_WIDTH)
                     cli_args->width = config_cli_args.width;
@@ -133,14 +190,23 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                     cli_args->die_sides = config_cli_args.die_sides;
                 if (config_cli_args.setargsflags & CLIAFLAG_EXACT_ENDING)
                     cli_args->exact_ending = config_cli_args.exact_ending;
-                if (config_cli_args.setargsflags & CLIAFLAG_DISTRIBUTION)
+                if (config_cli_args.setargsflags & CLIAFLAG_DISTRIBUTION) {
+                    distr_free(&cli_args->distribution);
                     cli_args->distribution = config_cli_args.distribution;
-                if (config_cli_args.setargsflags & CLIAFLAG_SNAKESANDLADDERS)
-                    for (size_t i = 0; i < config_cli_args.snakesandladders.array.size; i++)
-                        sals_add(&cli_args->snakesandladders, sals_get(&config_cli_args.snakesandladders, i));
+                    config_cli_args.distribution = distr_create_empty();
+                }
+                if (config_cli_args.setargsflags & CLIAFLAG_SNAKESANDLADDERS) {
+                    if (cli_args->snakesandladders.array.size == 0) {
+                        cli_args->snakesandladders = config_cli_args.snakesandladders;
+                        config_cli_args.snakesandladders = sals_create(0);
+                    } else {
+                        for (size_t i = 0; i < config_cli_args.snakesandladders.array.size; i++)
+                            sals_add(&cli_args->snakesandladders, sals_get(&config_cli_args.snakesandladders, i));
+                    }
+                }
 
                 // free resources
-                cli_args_free(&config_cli_args);
+                assetmanager_free(&config_cli_args);
                 if (config_args.argc != 0) {
                     free(config_args.argv[0]);
                     free(config_args.argv);
@@ -177,10 +243,32 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
             case 'd':
             {
                 cli_args->setargsflags |= CLIAFLAG_DISTRIBUTION;
-                distribution_t distr = strtodistr(optarg);
-                if (distr == DISTR_NONE) {
-                    fprintf(stderr, "%serror:%s invalid distribution string '%s'.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), optarg);
-                    exit(1);
+                int error = 0;
+                distribution_t distr = strtodistr(optarg, &error);
+                if (error) {
+                    fprintf(stderr, "%serror:%s invalid distribution '%s'. ", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), optarg);
+                    switch (error) {
+                        case 0:
+                            break;
+                        case 1:
+                            fprintf(stderr, "no string given.\n");
+                            exit(1);
+                        case 2:
+                            fprintf(stderr, "unable to duplicate string.\n");
+                            exit(1);
+                        case 3:
+                            fprintf(stderr, "weight value out of range (overflow/underflow).\n");
+                            exit(1);
+                        case 4:
+                            fprintf(stderr, "invalid characters in weight (not a number).\n");
+                            exit(1);
+                        case 5:
+                            fprintf(stderr, "remaining characters after number in weight string.\n");
+                            exit(1);
+                        default:
+                            fprintf(stderr, "unknown error.\n");
+                            exit(1);
+                    }
                 }
                 cli_args->distribution = distr;
                 break;
@@ -214,8 +302,9 @@ void cli_args_print(cli_args_t* cli_args) {
         "  height           = %lu\n"
         "  die_sides        = %lu\n"
         "  exact_ending     = %s\n"
-        "  distribution     = %c %s (%d)\n"
-        "  snakesandladders = [%lu] {",
+        "  distribution     = {\n"
+        "    preset  = %s (%d)\n"
+        "    weights = [%lu] {",
         (bool)(cli_args->setargsflags & CLIAFLAG_SNAKESANDLADDERS),
         (bool)(cli_args->setargsflags & CLIAFLAG_DISTRIBUTION),
         (bool)(cli_args->setargsflags & CLIAFLAG_EXACT_ENDING),
@@ -229,9 +318,18 @@ void cli_args_print(cli_args_t* cli_args) {
         cli_args->height,
         cli_args->die_sides,
         cli_args->exact_ending ? "true" : "false",
-        distribution_infos[cli_args->distribution].shortname, distribution_infos[cli_args->distribution].longname, cli_args->distribution,
-        cli_args->snakesandladders.array.size
+        distr_preset_infos[cli_args->distribution.preset].name, cli_args->distribution.preset,
+        cli_args->distribution.weights.size
     );
+    if (cli_args->distribution.weights.size != 0) {
+        printf(" ");
+        for (size_t i = 0; i < cli_args->distribution.weights.size; i++) {
+            const size_t* weight = array_get(&cli_args->distribution.weights, i);
+            printf("%lu%s ", *weight, i != cli_args->distribution.weights.size - 1 ? "," : "");
+        }
+    }
+    printf("}\n  },\n");
+    printf("  snakesandladders = [%lu] {", cli_args->snakesandladders.array.size);
     if (cli_args->snakesandladders.array.size != 0) {
         printf("\n");
         for (size_t i = 0; i < cli_args->snakesandladders.array.size; i++) {
@@ -245,8 +343,8 @@ void cli_args_print(cli_args_t* cli_args) {
 
 void cli_help() {
     printf(
-        "snakesandladders " VERSION "\n"
-        "Usage: ./snakesandladders [options] <snake-or-ladder>...\n"
+        "sals " VERSION "\n"
+        "Usage: sals [options] <snake-or-ladder>...\n"
         "\n"
         "  <snake-or-ladder>         A string containing two positive integers separated by a '-' character. Format: %sa%s-%sb%s.\n"
         "                             %sa%s is the index of the starting cell and %sb%s is the index of the ending cell.\n"
@@ -268,8 +366,36 @@ void cli_help() {
         "  -s, --die-sides %sval%s       The number of sides the used die has which must be an integer value >= %lu. The default value is %lu.\n"
         "  -e, --exact-ending        Enables the exact ending requirement. To end a game the player must land exactly on the last cell\n"
         "                             of the playing field. If a rolled die would overshoot the last cell the player is not moved.\n"
-        "  -d, --distribution %sval%s    The distribution when generating a random number in a die. Allowed values are:\n"
-        "                             - u, uniform: A uniform distribution (default)\n"
+        "  -d, --distribution %sval%s    The distribution when generating a random number in a die. The value can be a sequence of weights\n"
+        "                             separated by commas in the format '%sW1%s,%sW2%s,%sW3%s,%sW4%s,...,%sWn%s' where %sWn%s is the weight of the %sn%s-th die side.\n"
+        "                             Thus this specified weight sequence must have a weight count %sn%s less than or equal the die sides %ss%s (%sn%s <= %ss%s).\n"
+        "                             If less weights are specified than the number of die sides (%sn%s < %ss%s) the remaining die sides are automatically weighted with 0.\n"
+        "                             Each weight %sWi%s is an unsigned integer value. The distribution describes that the side %si%s's probability to be diced\n"
+        "                             in a dice roll %sPi%s is %sWi%s divided by the sum of all %sW%ss %sS%s.\n"
+        "                             i.e. %ss%s  %s// number of die sides (unsigned integer)%s\n"
+        "                                  %sn%s  %s// number of die specified weights in the weight sequence (unsigned integer)%s\n"
+        "                                  %si%s  %s// an arbitrary integer from 1 to %ss%s inclusive%s\n"
+        "                                  %sWi%s  %s// the weight of the side %si%s (unsigned integer)%s\n"
+        "                                  %sS%s = %sW1%s + %sW2%s + %sW3%s + %sW4%s + ... + %sWs%s  %s// sum of the weights of all sides 1 through %ss%s inclusive%s\n"
+        "                                  %sPi%s = %sWi%s / %sS%s  %s// probability of side %si%s to be diced in a dice roll%s\n"
+        "                             Alternatively to providing a weight sequence as described above, it is possible to use one of the following presets\n"
+        "                             whose weights are calculated in a certain way based on the die sides %ss%s.\n"
+        "                             - uniform    A uniform distribution %s(default)%s\n"
+        "                                           e.g. for %ss%s = 6 the weights are 1,1,1,1,1,1\n"
+        "                             - twodice    The distribution that arises when using two uniform and equal dice with %ss%s/2 sides each and using the\n"
+        "                                           sum of the two diced values as overall dice result.\n"
+        "                                           e.g. for %ss%s = 12 (two uniform dice with %ss%s/2 = 6 sides each)\n"
+        "                                                SUM\x1b(0x\x1b(B  1  2  3  4  5  6 \n"
+        "                                                \x1b(0qqqnqqqqqqqqqqqqqqqqqqq\x1b(B\n"
+        "                                                 1 \x1b(0x\x1b(B  2  3  4  5  6  7 \n"
+        "                                                 2 \x1b(0x\x1b(B  3  4  5  6  7  8 \n"
+        "                                                 3 \x1b(0x\x1b(B  4  5  6  7  8  9 \n"
+        "                                                 4 \x1b(0x\x1b(B  5  6  7  8  9 10 \n"
+        "                                                 5 \x1b(0x\x1b(B  6  7  8  9 10 11 \n"
+        "                                                 6 \x1b(0x\x1b(B  7  8  9 10 11 12 \n"
+        "                                                %s// count how often side (sum) is hit to determine their weights.%s\n"
+        "                                                %s// these are all possible ways to dice each value (sum) when using two uniform 6-sided dice%s\n"
+        "                                                -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1\n"
         "\n",
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
@@ -279,6 +405,24 @@ void cli_help() {
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_WIDTH_MIN, OPTVAL_WIDTH_DEFAULT,
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_HEIGHT_MIN, OPTVAL_HEIGHT_DEFAULT,
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_DIE_SIDES_MIN, OPTVAL_DIE_SIDES_DEFAULT,
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT)
     );
 }
@@ -293,7 +437,7 @@ cli_configfile_args_t cli_read_configfile(const char* filepath) {
         exit(1);
     }
 
-    filepos_t pos = { filepath };
+    filepos_t pos = filepos_create(filepath);
     cli_configfile_args_t config_args = {};
     array_t args = array_create(0, sizeof(char*), 0);
     array_t argsstr = array_create(0, sizeof(char), 0);
@@ -364,7 +508,8 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
     
     // skip starting whitespaces
     char c;
-    while ((c = fgetc(file)) != EOF && iswhitespace(c));
+    while ((c = fgetc(file)) != EOF && iswhitespace(c))
+        filepos_advance(pos, c);
     if (c == EOF)
         return 0;
     
@@ -382,28 +527,24 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
     bool startedarg = false;
     char mode = 0;
     do {
-        if (startedarg) {
-            if (c == '\n') {
-                pos->row++;
-                pos->col = 0;
-            } else {
-                pos->col++;
-            }
-        }
         if (mode == esc) {
             mode = 0;
         } else if (mode == qu1 || mode == qu2) {
             if (c == mode) {
                 mode = 0;
+                filepos_advance(pos, c);
                 continue;
             }
         } else if (c == qu1 || c == qu2) {
             mode = c;
+            filepos_advance(pos, c);
             continue;
         } else if (c == esc) {
             mode = esc;
+            filepos_advance(pos, c);
             continue;
         } else if (iswhitespace(c)) {
+            filepos_advance(pos, c);
             break;
         }
         char* addr = array_add(arg, &c);
@@ -418,6 +559,7 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
                 array_free(arg);
             return 0;
         }
+        filepos_advance(pos, c);
         if (!startedarg) {
             argstart = addr - (char*)arg->data;
             startedarg = true;
@@ -448,7 +590,8 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
 
     // add null-terminator to argument
     char terminator = '\0';
-    if (!array_add(arg, &terminator)) {
+    char* termaddr = array_add(arg, &terminator);
+    if (!termaddr) {
         if (error)
             *error = 4;
         if (pos)
@@ -459,6 +602,8 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
             array_free(arg);
         return 0;
     }
+    if (!startedarg)
+        argstart = termaddr - (char*)arg->data;
 
     if (error)
         *error = 0;
@@ -467,7 +612,7 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
 
 uint64_t cli_parse_opt_uint64(char opt, uint64_t valmin, uint64_t valmax) {
     size_t value = 0;
-    int error = parse_uint64(optarg, &value);
+    int error = strtouint64(optarg, &value);
     switch (error) {
         case 1:
             fprintf(stderr, "%serror:%s -%c no string given.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), opt);
@@ -496,7 +641,7 @@ uint64_t cli_parse_opt_uint64(char opt, uint64_t valmin, uint64_t valmax) {
 void cli_read_sals(cli_args_t* args, int argc, char* argv[]) {
     if (args && argc != 0)
         args->setargsflags |= CLIAFLAG_SNAKESANDLADDERS;
-    for (size_t i = 0; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
         int error = 0;
         snakeorladder_t sol = strtosol(argv[i], &error);
         if (error) {

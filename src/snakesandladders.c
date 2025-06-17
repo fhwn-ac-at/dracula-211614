@@ -1,7 +1,7 @@
 #include "snakesandladders.h"
 
 #include "str.h"
-#include "parsenum.h"
+#include "numbers.h"
 
 #include <stdlib.h>
 
@@ -33,14 +33,14 @@ snakeorladder_t strtosol(const char* str, int* error) {
         return (snakeorladder_t){};
     }
     snakeorladder_t sol = {};
-    int err = parse_uint64(twostrs.strs[0], &sol.src);
+    int err = strtouint64(twostrs.strs[0], &sol.src);
     if (err != 0) {
         if (error)
             *error = err + 2;
         free(strdup);
         return (snakeorladder_t){};
     }
-    err = parse_uint64(twostrs.strs[1], &sol.dst);
+    err = strtouint64(twostrs.strs[1], &sol.dst);
     if (err != 0) {
         if (error)
             *error = err + 5;

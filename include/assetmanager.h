@@ -22,8 +22,8 @@ typedef struct asset_t {
 
 /**
  * Struct for the asset manager.
- * If an asset has no data when it is released the deallocator is still executed but is given 0 as data pointer.
- * If an asset has no deallocator when it is released the asset is removed from the manager but the data remains untouched.
+ * If an asset has no data when it is freed the deallocator is still executed but is given 0 as data pointer.
+ * If an asset has no deallocator when it is freed the asset is removed from the manager but the data remains untouched.
  */
 typedef struct assetmanager_t {
     array_t assets;             // The array of the managed asset_ts
@@ -33,32 +33,31 @@ typedef struct assetmanager_t {
 extern assetmanager_t assetmanager;
 
 /**
- * Registers the assetmanager_free function as cleanup function with the atexit function.
- * If it could not be registered as exit function an appropriate error
- * message is output on stderr and the program is terminated with exit code 1.
+ * Initializes the asset manager by registering the assetmanager_free_all function as cleanup
+ * function with the atexit function. If it could not be registered as exit function an
+ * appropriate error message is output on stderr and the program is terminated with exit code 1.
  * @return 0 if the function was successfully registered as exit function, otherwise the program is terminated with exit code 1.
  */
-int assetmanager_register();
+int assetmanager_init();
 
 /**
  * Frees all assets of the global asset manager.
  * If no asset manager was given no action is performed.
  */
-void assetmanager_free();
+void assetmanager_free_all();
 
 /**
- * Adds the a new asset with the given data and deallocator to the global asset manager.
- * The when the asset is freed the data is deallocated with the given deallocator function.
+ * Adds a new asset with the given data and deallocator in the global asset manager.
+ * The when the asset is release the data is deallocated with the given deallocator function.
  * A new asset is add even if no data or deallocator is given.
  * @param data The address of the asset data that should be added to the asset manager.
  * @param deallocator The deallocator that should be used to deallocate the asset data upon releasing the asset.
- * @return The address of the added asset, 0 if it could not be added.
+ * @return true if the asset was successfully added, false.
  */
-asset_t* assetmanager_add(void* data, deallocator_fn_t deallocator);
+bool assetmanager_add(void* data, deallocator_fn_t deallocator);
 
 /**
- * Adds the given asset to the global asset manager.
- * @param asset The asset that should be added to the asset manager
- * @return The address of the added asset, 0 if it could not be added.
+ * Frees all asset that references the given data address in the global asset manager.
+ * @param data The data that should be deallocated if referenced by assets in the asset manager.
  */
-asset_t* assetmanager_add_asset(asset_t asset);
+void assetmanager_free(void* data);

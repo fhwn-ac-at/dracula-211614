@@ -4,13 +4,6 @@
 #include <stdlib.h>
 
 twostrs_t strsplitnext(char* str, char splitchar) {
-    twostrs_t twostrs = strsplitnextconst(str, splitchar);
-    if (twostrs.strs[0] && twostrs.strs[1] && twostrs.strs[1] - twostrs.strs[0] > 0)
-        *(twostrs.strs[1] - 1) = '\0';
-    return twostrs;
-}
-
-const twostrs_t strsplitnextconst(const char* str, char splitchar) {
     twostrs_t twostrs = { { (char*)str, 0 } };
     if (!str)
         return twostrs;
@@ -18,6 +11,8 @@ const twostrs_t strsplitnextconst(const char* str, char splitchar) {
     if (*str == '\0')
         return twostrs;
     twostrs.strs[1] = (char*)str + 1;
+    if (twostrs.strs[0] && twostrs.strs[1] && twostrs.strs[1] - twostrs.strs[0] > 0)
+        *(twostrs.strs[1] - 1) = '\0';
     return twostrs;
 }
 

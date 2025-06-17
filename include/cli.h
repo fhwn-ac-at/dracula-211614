@@ -11,18 +11,18 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define OPTVAL_CONFIGFILE_DEFAULT 0                 // The default configuration file
-#define OPTVAL_WIDTH_DEFAULT 10ul                   // The default width of the playing field
-#define OPTVAL_WIDTH_MIN GAME_WIDTH_MIN             // The minimum width of the playing field
-#define OPTVAL_WIDTH_MAX ULONG_MAX                  // The maximum width of the playing field
-#define OPTVAL_HEIGHT_DEFAULT 10ul                  // The default height of the playing field
-#define OPTVAL_HEIGHT_MIN GAME_HEIGHT_MIN           // The minimum height of the playing field
-#define OPTVAL_HEIGHT_MAX ULONG_MAX                 // The maximum height of the playing field
-#define OPTVAL_DIE_SIDES_DEFAULT 6ul                // The default number of sides the used die has
-#define OPTVAL_DIE_SIDES_MIN 1ul                    // The minimum number of sides the used die has
-#define OPTVAL_DIE_SIDES_MAX ULONG_MAX              // The maximum number of sides the used die has
-#define OPTVAL_EXACT_ENDING_DEFAULT false           // The default activation of the exact ending
-#define OPTVAL_DISTRIBUTION_DEFAULT DISTR_UNIFORM   // The default distribution of randomly generated values
+#define OPTVAL_CONFIGFILE_DEFAULT 0                                         // The default configuration file
+#define OPTVAL_WIDTH_DEFAULT 10ul                                           // The default width of the playing field
+#define OPTVAL_WIDTH_MIN GAME_WIDTH_MIN                                     // The minimum width of the playing field
+#define OPTVAL_WIDTH_MAX ULONG_MAX                                          // The maximum width of the playing field
+#define OPTVAL_HEIGHT_DEFAULT 10ul                                          // The default height of the playing field
+#define OPTVAL_HEIGHT_MIN GAME_HEIGHT_MIN                                   // The minimum height of the playing field
+#define OPTVAL_HEIGHT_MAX ULONG_MAX                                         // The maximum height of the playing field
+#define OPTVAL_DIE_SIDES_DEFAULT 6ul                                        // The default number of sides the used die has
+#define OPTVAL_DIE_SIDES_MIN 1ul                                            // The minimum number of sides the used die has
+#define OPTVAL_DIE_SIDES_MAX ULONG_MAX                                      // The maximum number of sides the used die has
+#define OPTVAL_EXACT_ENDING_DEFAULT false                                   // The default activation of the exact ending
+#define OPTVAL_DISTRIBUTION_DEFAULT distr_create(DISTR_PRESET_UNIFORM)      // The default distribution of randomly generated values
 
 /**
  * Flags for every cli argument setting.
@@ -96,6 +96,23 @@ getopt_state_t getopt_state();
  * @param state The state that getopt should be set to. If not given no action is performed.
  */
 void getopt_state_set(const getopt_state_t* state);
+
+/**
+ * Creates a file position with the given filepath in row 1 and column 1
+ * @param filepath The file position that should be advanced. 
+ * @return The created file position.
+ */
+filepos_t filepos_create(const char* filepath);
+
+/**
+ * Advance the given file position.
+ * If c is '\n' pos->row is incremented and pos->col is reset to 1,
+ * otherwise pos->row remains unchanged and pos->col is incremented.
+ * If no filepos was given no action is performed.
+ * @param filepos The file position that should be advanced. 
+ * @param character The just previously read character.
+ */
+void filepos_advance(filepos_t* filepos, char character);
 
 /**
  * Frees the contents of the given cli_args freeing it's snakes and ladders and clearing all values.

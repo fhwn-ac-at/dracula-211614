@@ -25,7 +25,7 @@ adjmat_t adjmat_create(size_t vertex_count, size_t edge_count, const edge_t* edg
 void adjmat_free(adjmat_t* adjmat) {
     if (adjmat->edges)
         free(adjmat->edges);
-    *adjmat = (adjmat_t){ 0, 0 };
+    *adjmat = (adjmat_t){};
 }
 
 void adjmat_print(const adjmat_t* adjmat) {

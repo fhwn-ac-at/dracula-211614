@@ -14,7 +14,7 @@
  * - 3 invalid characters (not a number)
  * - 4 remaining characters after number in string
  */
-int parse_double(const char* str, double* value);
+int strtodouble(const char* str, double* value);
 
 /**
  * Parses the given string to a uint64_t.
@@ -28,4 +28,4 @@ int parse_double(const char* str, double* value);
  * - 3 invalid characters (not a number)
  * - 4 remaining characters after number in string
  */
-int parse_uint64(const char* str, uint64_t* value);
+int strtouint64(const char* str, uint64_t* value);

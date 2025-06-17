@@ -1,10 +1,14 @@
 CC = clang
-CFLAGS += -Wall -Wextra -Werror --std=c17
+CFLAGS += -Wall -Wextra -Werror --std=c17 -D_XOPEN_SOURCE=500
+INCLUDES += -Iinclude
+VERSION += -DVERSION_MAJOR=0 -DVERSION_MINOR=1 -DVERSION_PATCH=2
+DEBUG = -UDEBUG
+SRC = src
 
-snakesandladders:
-	$(CC) $(CFLAGS) *.c
+sals:
+	$(CC) $(CFLAGS) $(INCLUDES) $(VERSION) $(DEBUG) $(SRC)/*.c -o sals
 
 clean:
-	rm -f snakesandladders *.o
+	rm -f sals *.o
 
 .PHONY: clean

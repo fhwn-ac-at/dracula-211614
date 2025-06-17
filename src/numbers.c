@@ -1,9 +1,9 @@
-#include "parsenum.h"
+#include "numbers.h"
 
 #include <errno.h>
 #include <stdlib.h>
 
-int parse_double(const char *str, double* value) {
+int strtodouble(const char *str, double* value) {
     if (!str)
         return 1;
     char *endptr;
@@ -20,7 +20,7 @@ int parse_double(const char *str, double* value) {
     return 0;
 }
 
-int parse_uint64(const char *str, uint64_t* value) {
+int strtouint64(const char *str, uint64_t* value) {
     if (!str)
         return 1;
     char *endptr;

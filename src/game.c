@@ -68,6 +68,12 @@ game_t game_setup(cli_args_t* cli_args) {
 void game_print(game_t* game) {
     if (!game || game->width == 0 || game->height == 0)
         return;
+    // print reversed column numbers
+    printf("%s", FMT(FMTVAL_DEFAULT));
+    printf("%5s","");
+    for (size_t i = game->width; i > 0; i--)
+        printf("%5lu", i - 1);
+    printf("\n");
     // print top outline
     printf("%4s\x1b(0l", "");
     for (size_t i = 0; i < game->width; i++)
@@ -88,21 +94,21 @@ void game_print(game_t* game) {
                 break;
             }
         }
-        // print row number at the beginning of the line
+        // print index of first cell in row at the beginning of the line
         if ((i-1) % game->width == game->width - 1)
-            printf("%3lu \x1b(0x\x1b(B", (i-1) / game->width);
+            printf("%3lu \x1b(0x\x1b(B", idx);
         // print destination cell index for current edge
         if (hasedge == 0)
-            printf("\x1b[90m");
+            printf("%s", FMT(FMTVAL_FG_BRIGHT_BLACK));
         else if (hasedge == 1)
-            printf("\x1b[93m");
+            printf("%s", FMT(FMTVAL_FG_BRIGHT_YELLOW));
         else
-            printf("\x1b[96m");
+            printf("%s", FMT(FMTVAL_FG_BRIGHT_CYAN));
         printf("%5d", edge);
-        printf("\x1b[0m");
-        // print end of line
+        printf("%s", FMT(FMTVAL_DEFAULT));
+        // print index of last cell in row at the end of the line
         if ((i-1) % game->width == 0)
-            printf(" \x1b(0x\x1b(B\n");
+            printf(" \x1b(0x\x1b(B %3lu\n", idx);
     }
     // print bottom outline
     printf("%4s\x1b(0m", "");
@@ -110,7 +116,7 @@ void game_print(game_t* game) {
         printf("qqqqq");
     printf("qj\x1b(B\n");
     // print column numbers
-    printf("\x1b[0m");
+    printf("%s", FMT(FMTVAL_DEFAULT));
     printf("%5s","");
     for (size_t i = 0; i < game->width; i++)
         printf("%5lu", i);

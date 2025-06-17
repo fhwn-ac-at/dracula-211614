@@ -9,8 +9,8 @@ The C library `getopt.h` is used for processing command line arguments.
 When running the program with the `-h` or `--help` option a help text is printed and the program terminates.
 
 ```
-snakesandladders 0.1.1
-Usage: ./snakesandladders [options] <snake-or-ladder>...
+sals 0.1.2
+Usage: sals [options] <snake-or-ladder>...
 
   <snake-or-ladder>         A string containing two positive integers separated by a '-' character. Format: a-b.
                              a is the index of the starting cell and b is the index of the ending cell.
@@ -32,8 +32,36 @@ options:
   -s, --die-sides val       The number of sides the used die has which must be an integer value >= 1. The default value is 6.
   -e, --exact-ending        Enables the exact ending requirement. To end a game the player must land exactly on the last cell
                              of the playing field. If a rolled die would overshoot the last cell the player is not moved.
-  -d, --distribution val    The distribution when generating a random number in a die. Allowed values are:
-                             - u, uniform: A uniform distribution (default)
+  -d, --distribution val    The distribution when generating a random number in a die. The value can be a sequence of weights
+                             separated by commas in the format 'W1,W2,W3,W4,...,Wn' where Wn is the weight of the n-th die side.
+                             Thus this specified weight sequence must have a weight count n less than or equal the die sides s (n <= s).
+                             If less weights are specified than the number of die sides (n < s) the remaining die sides are automatically weighted with 0.
+                             Each weight Wi is an unsigned integer value. The distribution describes that the side i's probability to be diced
+                             in a dice roll Pi is Wi divided by the sum of all Ws S.
+                             i.e. s  // number of die sides (unsigned integer)
+                                  n  // number of die specified weights in the weight sequence (unsigned integer)
+                                  i  // an arbitrary integer from 1 to s inclusive
+                                  Wi  // the weight of the side i (unsigned integer)
+                                  S = W1 + W2 + W3 + W4 + ... + Ws  // sum of the weights of all sides 1 through s inclusive
+                                  Pi = Wi / S  // probability of side i to be diced in a dice roll
+                             Alternatively to providing a weight sequence as described above, it is possible to use one of the following presets
+                             whose weights are calculated in a certain way based on the die sides s.
+                             - uniform    A uniform distribution (default)
+                                           e.g. for s = 6 the weights are 1,1,1,1,1,1
+                             - twodice    The distribution that arises when using two uniform and equal dice with s/2 sides each and using the
+                                           sum of the two diced values as overall dice result.
+                                           e.g. for s = 12 (two uniform dice with s/2 = 6 sides each)
+                                                SUM│  1  2  3  4  5  6 
+                                                ───┼───────────────────
+                                                 1 │  2  3  4  5  6  7 
+                                                 2 │  3  4  5  6  7  8 
+                                                 3 │  4  5  6  7  8  9 
+                                                 4 │  5  6  7  8  9 10 
+                                                 5 │  6  7  8  9 10 11 
+                                                 6 │  7  8  9 10 11 12 
+                                                // count how often side (sum) is hit to determine their weights.
+                                                // these are all possible ways to dice each value (sum) when using two uniform 6-sided dice
+                                                -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1
 ```
 
 ## Assignment: 6th Assignment

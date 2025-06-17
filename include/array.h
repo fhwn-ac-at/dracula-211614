@@ -81,7 +81,7 @@ void array_clear(array_t* array);
  * @param array The array to check.
  * @return true if array->size == 0 or no array was given, false otherwise.
  */
-bool array_isempty(array_t* array);
+bool array_isempty(const array_t* array);
 
 /**
  * Reserves a big enough data memory block to store newcapacity many elements in the array.
@@ -135,3 +135,12 @@ void* array_find(array_t* array, const void* element);
  * @return true if the element was found in the array, false if no element in the array equaled the given element or no element or array was given.
  */
 bool array_contains(array_t* array, const void* element);
+
+/**
+ * Removes the element at the given index from the array.
+ * All following elements are shifted 1 slot towards the beginning of the array.
+ * Previously acquired pointers to all of those elements now are invalid / point to an incorrect element.
+ * If array->elementsize == 0 it is set to 1 as default.
+ * @return true if the element was removed successfully, false otherwise.
+ */
+bool array_rmv(array_t* array, size_t index);
