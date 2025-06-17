@@ -10,6 +10,7 @@ game_t game_setup(cli_args_t* cli_args) {
     game_t game = {};
     if (!cli_args)
         return game;
+    assetmanager_add(&game, (deallocator_fn_t)game_free);
 
     // set dimensions
     game.width = cli_args->width;
@@ -19,6 +20,13 @@ game_t game_setup(cli_args_t* cli_args) {
         exit(1);
     }
     size_t cellcount = game.width * game.height;
+
+    // create die from distribution
+    game.die = die_create(&cli_args->distribution);
+    if (die_isempty(&game.die)) {
+        fprintf(stderr, "%serror:%s unable to create die from distribution.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
+        exit(1);
+    }
     
     // validate snakes and ladders
     array_t* sals = &cli_args->snakesandladders.array;
@@ -60,9 +68,16 @@ game_t game_setup(cli_args_t* cli_args) {
 
     // create graph from snakes and ladders
     game.adjmat = adjmat_create(cellcount, sals->size, sals->data);
-    assetmanager_add(&game.adjmat, (deallocator_fn_t)adjmat_free);
-
+    
     return game;
+}
+
+void game_free(game_t* game) {
+    if (!game)
+        return;
+    die_free(&game->die);
+    adjmat_free(&game->adjmat);
+    *game = (game_t){};
 }
 
 void game_print(game_t* game) {

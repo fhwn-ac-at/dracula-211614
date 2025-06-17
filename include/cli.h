@@ -23,6 +23,9 @@
 #define OPTVAL_DIE_SIDES_MAX ULONG_MAX                                      // The maximum number of sides the used die has
 #define OPTVAL_EXACT_ENDING_DEFAULT false                                   // The default activation of the exact ending
 #define OPTVAL_DISTRIBUTION_DEFAULT distr_create(DISTR_PRESET_UNIFORM)      // The default distribution of randomly generated values
+#define OPTVAL_ITERATIONS_DEFAULT 100000ul                                  // The default number of times the game should be simulated
+#define OPTVAL_ITERATIONS_MIN 1ul                                           // The minimum number of times the game should be simulated
+#define OPTVAL_ITERATIONS_MAX ULONG_MAX                                     // The maximum number of times the game should be simulated
 
 /**
  * Flags for every cli argument setting.
@@ -36,13 +39,14 @@ typedef enum cli_args_flag_t {
     CLIAFLAG_DIE_SIDES        = 1 << 4,
     CLIAFLAG_EXACT_ENDING     = 1 << 5,
     CLIAFLAG_DISTRIBUTION     = 1 << 6,
-    CLIAFLAG_SNAKESANDLADDERS = 1 << 7,
+    CLIAFLAG_ITERATIONS       = 1 << 7,
+    CLIAFLAG_SNAKESANDLADDERS = 1 << 8,
 } cli_args_flag_t;
 
 /**
  * Type used to store multiple cli_args_flag_ts (bitwise ORed)
  */
-typedef uint8_t cli_args_flags_t; 
+typedef uint16_t cli_args_flags_t; 
 
 /**
  * Command line interface arguments.
@@ -56,6 +60,7 @@ typedef struct cli_args_t {
     size_t die_sides;                       // The number of sides the used die has
     bool exact_ending;                      // Enables/Disables the exact ending. The player must land exactly in the ending cell to end the game.
     distribution_t distribution;            // The distribution of randomly generated values
+    size_t iterations;                      // The number of times the game should be simulated
     snakesandladders_t snakesandladders;    // The snakes and ladders specified in the cli arguments and/or in the config file
 } cli_args_t;
 

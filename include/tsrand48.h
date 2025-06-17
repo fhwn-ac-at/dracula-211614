@@ -7,6 +7,7 @@
 /**
  * Sets the thread local internal random number generator state xsubi to the given array of 3 unsigned shorts seed16v.
  * The previous value of xsubi is stored in an internal buffer and it's address is returned.
+ * The internal buffer content is overwritten every time the tsseed48 or tsnewseed48 function is called.
  * @param seed16v The value the random number generator state xsubi should be set to.
  * @return The address of an internal buffer containing the previous value of xsubi.
  */
@@ -15,6 +16,7 @@ const unsigned short* tsseed48(unsigned short seed16v[3]);
 /**
  * Sets the thread local internal random number generator state xsubi to a new value that is the current time XOR the thread id.
  * The previous value of xsubi is stored in an internal buffer and it's address is returned.
+ * The internal buffer content is overwritten every time the tsseed48 or tsnewseed48 function is called.
  * @return The address of an internal buffer containing the previous value of xsubi.
  */
 const unsigned short* tsnewseed48();

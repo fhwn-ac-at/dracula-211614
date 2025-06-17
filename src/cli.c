@@ -59,26 +59,28 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
         .die_sides = OPTVAL_DIE_SIDES_DEFAULT,
         .exact_ending = OPTVAL_EXACT_ENDING_DEFAULT,
         .distribution = OPTVAL_DISTRIBUTION_DEFAULT,
+        .iterations = OPTVAL_ITERATIONS_DEFAULT,
         .snakesandladders = sals_create(0)
     };
     assetmanager_add(&args, (deallocator_fn_t)cli_args_free);
 
     // define options
     const char* optstring;
-    struct option longopts[8];
+    struct option longopts[9];
     if (isconfigfile) {
         // disable option -c --config-file if args came from a config file
-        optstring = ":h:x:y:s:ed:";
+        optstring = ":h:x:y:s:ed:i:";
         longopts[0] = (struct option){ "help"        , 0, 0, 'h' };
         longopts[1] = (struct option){ "width"       , 1, 0, 'x' };
         longopts[2] = (struct option){ "height"      , 1, 0, 'y' };
         longopts[3] = (struct option){ "die-sides"   , 1, 0, 's' };
         longopts[4] = (struct option){ "exact-ending", 0, 0, 'e' };
         longopts[5] = (struct option){ "distribution", 1, 0, 'd' };
-        longopts[6] = (struct option){ 0             , 0, 0, 0   };
+        longopts[6] = (struct option){ "iterations"  , 1, 0, 'i' };
         longopts[7] = (struct option){ 0             , 0, 0, 0   };
+        longopts[8] = (struct option){ 0             , 0, 0, 0   };
     } else {
-        optstring = ":hc:x:y:s:ed:";
+        optstring = ":hc:x:y:s:ed:i:";
         longopts[0] = (struct option){ "help"        , 0, 0, 'h' };
         longopts[1] = (struct option){ "config-file" , 1, 0, 'c' };
         longopts[2] = (struct option){ "width"       , 1, 0, 'x' };
@@ -86,7 +88,8 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
         longopts[4] = (struct option){ "die-sides"   , 1, 0, 's' };
         longopts[5] = (struct option){ "exact-ending", 0, 0, 'e' };
         longopts[6] = (struct option){ "distribution", 1, 0, 'd' };
-        longopts[7] = (struct option){ 0             , 0, 0, 0   };
+        longopts[7] = (struct option){ "iterations"  , 1, 0, 'i' };
+        longopts[8] = (struct option){ 0             , 0, 0, 0   };
     }
     // parse options
     cli_parse_opts(&args, argc, argv, initoptind, optstring, longopts);
@@ -195,6 +198,8 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                     cli_args->distribution = config_cli_args.distribution;
                     config_cli_args.distribution = distr_create_empty();
                 }
+                if (config_cli_args.setargsflags & CLIAFLAG_ITERATIONS)
+                    cli_args->iterations = config_cli_args.iterations;
                 if (config_cli_args.setargsflags & CLIAFLAG_SNAKESANDLADDERS) {
                     if (cli_args->snakesandladders.array.size == 0) {
                         cli_args->snakesandladders = config_cli_args.snakesandladders;
@@ -273,6 +278,12 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                 cli_args->distribution = distr;
                 break;
             }
+            case 'i':
+            {
+                cli_args->setargsflags |= CLIAFLAG_ITERATIONS;
+                cli_args->iterations = cli_parse_opt_uint64(opt, OPTVAL_ITERATIONS_MIN, OPTVAL_ITERATIONS_MAX);
+                break;
+            }
             case ':':
             {
                 fprintf(stderr, "%serror:%s missing value for option '%c'.\n", FMT(FMTVAL_FG_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
@@ -329,7 +340,12 @@ void cli_args_print(cli_args_t* cli_args) {
         }
     }
     printf("}\n  },\n");
-    printf("  snakesandladders = [%lu] {", cli_args->snakesandladders.array.size);
+    printf(
+        "  iterations       = %lu\n"
+        "  snakesandladders = [%lu] {",
+        cli_args->iterations,
+        cli_args->snakesandladders.array.size
+    );
     if (cli_args->snakesandladders.array.size != 0) {
         printf("\n");
         for (size_t i = 0; i < cli_args->snakesandladders.array.size; i++) {
@@ -385,17 +401,18 @@ void cli_help() {
         "                             - twodice    The distribution that arises when using two uniform and equal dice with %ss%s/2 sides each and using the\n"
         "                                           sum of the two diced values as overall dice result.\n"
         "                                           e.g. for %ss%s = 12 (two uniform dice with %ss%s/2 = 6 sides each)\n"
-        "                                                SUM\x1b(0x\x1b(B  1  2  3  4  5  6 \n"
-        "                                                \x1b(0qqqnqqqqqqqqqqqqqqqqqqq\x1b(B\n"
-        "                                                 1 \x1b(0x\x1b(B  2  3  4  5  6  7 \n"
-        "                                                 2 \x1b(0x\x1b(B  3  4  5  6  7  8 \n"
-        "                                                 3 \x1b(0x\x1b(B  4  5  6  7  8  9 \n"
-        "                                                 4 \x1b(0x\x1b(B  5  6  7  8  9 10 \n"
-        "                                                 5 \x1b(0x\x1b(B  6  7  8  9 10 11 \n"
-        "                                                 6 \x1b(0x\x1b(B  7  8  9 10 11 12 \n"
+        "                                                SUM \x1b(0x\x1b(B 1  2  3  4  5  6 \n"
+        "                                                \x1b(0qqqqnqqqqqqqqqqqqqqqqqqq\x1b(B\n"
+        "                                                  1 \x1b(0x\x1b(B 2  3  4  5  6  7 \n"
+        "                                                  2 \x1b(0x\x1b(B 3  4  5  6  7  8 \n"
+        "                                                  3 \x1b(0x\x1b(B 4  5  6  7  8  9 \n"
+        "                                                  4 \x1b(0x\x1b(B 5  6  7  8  9 10 \n"
+        "                                                  5 \x1b(0x\x1b(B 6  7  8  9 10 11 \n"
+        "                                                  6 \x1b(0x\x1b(B 7  8  9 10 11 12 \n"
         "                                                %s// count how often side (sum) is hit to determine their weights.%s\n"
         "                                                %s// these are all possible ways to dice each value (sum) when using two uniform 6-sided dice%s\n"
         "                                                -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1\n"
+        "  -i, --iterations %sval%s      The number of times the game should be simulated which must be an integer value >= %lu. The default is %lu.\n"
         "\n",
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
@@ -423,7 +440,8 @@ void cli_help() {
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
-        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT)
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_ITERATIONS_MIN, OPTVAL_ITERATIONS_DEFAULT
     );
 }
 
