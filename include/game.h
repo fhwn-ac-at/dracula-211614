@@ -35,4 +35,4 @@ void game_free(game_t* game);
  * Prints the playing field of the game.
  * @param game The game that should be printed.
  */
-void game_print(game_t* game);
+void game_print(const game_t* game);

@@ -20,7 +20,7 @@ die_t die_create_empty();
  * @param distr The distribution that should be used.
  * @return The created die.
  */
-die_t die_create(distribution_t* distr);
+die_t die_create(const distribution_t* distr);
 
 /**
  * Frees the given die freeing it's array of side probabilities.
@@ -37,7 +37,8 @@ bool die_isempty(const die_t* die);
 
 /**
  * Dices the given die thread-safely generating a random die side with the distribution according to the die's side probabilities.
+ * Possible side values lie in the interval [1, die->sides.size] (1 based indexing meaning the first side of the die has index 1, not 0).
  * @param die The die that should be diced.
  * @return The diced side.
  */
-size_t dice(die_t* die);
+size_t dice(const die_t* die);

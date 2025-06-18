@@ -15,7 +15,6 @@ typedef int(*comparator_fn_t)(size_t valuesize, const void* a, const void* b);
 /**
  * Struct for an array capable of holding elements of arbitrary size in a contiguous memory block.
  * The elementsize should not be changed while the array is not empty unless the next action on the array is a clear or free.
- * If elementsize == 0 when it is needed by any array function (e.g. array_reserve, array_get, array_set, array_add) it is set to 1 as default.
  * If a comparison is required (e.g. in array_find) the comparator function is used, if it is 0 the byte_compare function is used as a fallback.
  */
 typedef struct array_t {
@@ -51,21 +50,23 @@ int array_value_compare(array_t* array, const void* a, const void* b);
 
 /**
  * Creates a new array with the given initial capacity, elementsize and value comparator.
+ * If initial capacity is > 0 but elementsize is 0 no memory buffer is allocated and the capacity is set to 0.
  * @param initcapacity The initial capacity of the array.
- * @param elementsize The size of a single element. If it equals 0 elementsize defaults to 1.
+ * @param elementsize The size of a single element.
  * @param comparator The comparator to use for value comparisons in this array.
  * @return The newly created array.
  */
 array_t array_create(size_t initcapacity, size_t elementsize, comparator_fn_t comparator);
 
 /**
- * Frees the given array by deallocating it's memory buffer and setting it's capacity, size and elementsize to 0.
+ * Frees the given array by deallocating it's memory buffer and setting it's capacity, size, elementsize and comparator to 0.
  * @param array The array that should be freed.
  */
 void array_free_full(array_t* array);
 
 /**
- * Frees the given array by deallocating it's memory buffer and setting it's capacity and size to 0. The elementsize remains unchanged.
+ * Frees the given array by deallocating it's memory buffer and setting it's capacity and size to 0.
+ * The elementsize and comparator remain unchanged.
  * @param array The array that should be freed.
  */
 void array_free(array_t* array);
@@ -99,6 +100,13 @@ bool array_reserve(array_t* array, size_t newcapacity);
  * @return The address of the element at the given index.
  */
 void* array_get(array_t* array, size_t index);
+
+/**
+ * Retrieves the address of the element at the given index in the array as a const pointer.
+ * If array->elementsize == 0 it is set to 1 as default.
+ * @return The address of the element at the given index as a const pointer.
+ */
+const void* array_getconst(const array_t* array, size_t index);
 
 /**
  * Sets the element at the given index in the array to the array->elementsize many bytes beginning at the given element address.

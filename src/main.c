@@ -1,14 +1,23 @@
 #include "assetmanager.h"
 #include "cli.h"
-#include "game.h"
+#include "simulator.h"
 
 #include "cvts.h"
 #include "tsrand48.h"
 
 #include <stdlib.h>
 
+/**
+ * Restores the cursor visibility.
+ */
+void restore_cursor_visibility() {
+    cvts_cursor_show();
+    fflush(stdout);
+}
+
 int main(int argc, char* argv[]) {
     assetmanager_init();
+    atexit(restore_cursor_visibility);   // restore cursor visibility when the program terminates.
 
     #ifdef DEBUG
     printf("args[%d] { ", argc);
@@ -40,16 +49,19 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "%serror:%s unable to simulate %lu dices.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), its);
         exit(1);
     }
-    for (size_t side = 0; side < game.die.sides.size; side++)
-        sides[side] = 0;
+    for (size_t side = 1; side != game.die.sides.size + 1; side++)
+        sides[side - 1] = 0;
     printf("simulating %lu dices\n", its);
     tsnewseed48();
     size_t it = 0;
     for (; it < its; it++)
-        sides[dice(&game.die)]++;
-    for (size_t side = 0; side < game.die.sides.size; side++)
-        printf("%s%3lu%s %12lu %10.6lf%%\n", FMT(FMTVAL_FG_BRIGHT_BLACK), side, FMT(FMTVAL_FG_DEFAULT), sides[side], ((double)sides[side] / (double)its) * 100.0);
+        sides[dice(&game.die) - 1]++;
+    for (size_t side = 1; side != game.die.sides.size + 1; side++)
+        printf("%s%3lu%s %12lu %10.6lf%%\n", FMT(FMTVAL_FG_BRIGHT_BLACK), side, FMT(FMTVAL_FG_DEFAULT), sides[side - 1], ((double)sides[side - 1] / (double)its) * 100.0);
+    printf("\n");
     free(sides);
+
+    simulate(&game, cli_args.iterations);
 
     assetmanager_free_all();
 }

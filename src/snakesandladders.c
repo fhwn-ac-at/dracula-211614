@@ -40,10 +40,22 @@ snakeorladder_t strtosol(const char* str, int* error) {
         free(strdup);
         return (snakeorladder_t){};
     }
+    if (sol.src == 0) {
+        if (error)
+            *error = 7;
+        free(strdup);
+        return (snakeorladder_t){};
+    }
     err = strtouint64(twostrs.strs[1], &sol.dst);
     if (err != 0) {
         if (error)
-            *error = err + 5;
+            *error = err + 6;
+        free(strdup);
+        return (snakeorladder_t){};
+    }
+    if (sol.dst == 0) {
+        if (error)
+            *error = 11;
         free(strdup);
         return (snakeorladder_t){};
     }
@@ -51,28 +63,4 @@ snakeorladder_t strtosol(const char* str, int* error) {
         *error = 0;
     free(strdup);
     return sol;
-}
-
-snakesandladders_t sals_create(size_t initcapacity) {
-    return (snakesandladders_t){ array_create(initcapacity, sizeof(snakeorladder_t), 0) };
-}
-
-void sals_free(snakesandladders_t* sals) {
-    if (!sals)
-        return;
-    array_free(&sals->array);
-}
-
-void sals_clear(snakesandladders_t* sals) {
-    if (!sals)
-        return;
-    array_clear(&sals->array);
-}
-
-snakeorladder_t* sals_add(snakesandladders_t* sals, const snakeorladder_t* sol) {
-    return sals ? array_add(&sals->array, sol) : 0;
-}
-
-snakeorladder_t* sals_get(snakesandladders_t* sals, size_t index) {
-    return sals ? array_get(&sals->array, index) : 0;
 }

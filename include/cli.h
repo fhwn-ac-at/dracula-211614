@@ -23,7 +23,7 @@
 #define OPTVAL_DIE_SIDES_MAX ULONG_MAX                                      // The maximum number of sides the used die has
 #define OPTVAL_EXACT_ENDING_DEFAULT false                                   // The default activation of the exact ending
 #define OPTVAL_DISTRIBUTION_DEFAULT distr_create(DISTR_PRESET_UNIFORM)      // The default distribution of randomly generated values
-#define OPTVAL_ITERATIONS_DEFAULT 100000ul                                  // The default number of times the game should be simulated
+#define OPTVAL_ITERATIONS_DEFAULT 1000ul                                    // The default number of times the game should be simulated
 #define OPTVAL_ITERATIONS_MIN 1ul                                           // The minimum number of times the game should be simulated
 #define OPTVAL_ITERATIONS_MAX ULONG_MAX                                     // The maximum number of times the game should be simulated
 
@@ -61,7 +61,7 @@ typedef struct cli_args_t {
     bool exact_ending;                      // Enables/Disables the exact ending. The player must land exactly in the ending cell to end the game.
     distribution_t distribution;            // The distribution of randomly generated values
     size_t iterations;                      // The number of times the game should be simulated
-    snakesandladders_t snakesandladders;    // The snakes and ladders specified in the cli arguments and/or in the config file
+    array_t snakesandladders;    // The snakes and ladders specified in the cli arguments and/or in the config file
 } cli_args_t;
 
 /**
@@ -162,7 +162,7 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
 /**
  * Prints the cli arguments.
  */
-void cli_args_print(cli_args_t* cli_args);
+void cli_args_print(const cli_args_t* cli_args);
 
 /**
  * Prints the command line interface help text about the pfusch interpreter.

@@ -42,7 +42,7 @@ void cli_args_free(cli_args_t *cli_args) {
     if (!cli_args)
         return;
     distr_free(&cli_args->distribution);
-    sals_free(&cli_args->snakesandladders);
+    array_free(&cli_args->snakesandladders);
     *cli_args = (cli_args_t){};
 }
 
@@ -60,7 +60,7 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
         .exact_ending = OPTVAL_EXACT_ENDING_DEFAULT,
         .distribution = OPTVAL_DISTRIBUTION_DEFAULT,
         .iterations = OPTVAL_ITERATIONS_DEFAULT,
-        .snakesandladders = sals_create(0)
+        .snakesandladders = array_create(0, sizeof(snakeorladder_t), 0)
     };
     assetmanager_add(&args, (deallocator_fn_t)cli_args_free);
 
@@ -201,12 +201,12 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                 if (config_cli_args.setargsflags & CLIAFLAG_ITERATIONS)
                     cli_args->iterations = config_cli_args.iterations;
                 if (config_cli_args.setargsflags & CLIAFLAG_SNAKESANDLADDERS) {
-                    if (cli_args->snakesandladders.array.size == 0) {
+                    if (cli_args->snakesandladders.size == 0) {
                         cli_args->snakesandladders = config_cli_args.snakesandladders;
-                        config_cli_args.snakesandladders = sals_create(0);
+                        config_cli_args.snakesandladders = array_create(0, sizeof(snakeorladder_t), 0);
                     } else {
-                        for (size_t i = 0; i < config_cli_args.snakesandladders.array.size; i++)
-                            sals_add(&cli_args->snakesandladders, sals_get(&config_cli_args.snakesandladders, i));
+                        for (size_t i = 0; i < config_cli_args.snakesandladders.size; i++)
+                            array_add(&cli_args->snakesandladders, array_get(&config_cli_args.snakesandladders, i));
                     }
                 }
 
@@ -300,21 +300,21 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
     return cli_args;
 }
 
-void cli_args_print(cli_args_t* cli_args) {
+void cli_args_print(const cli_args_t* cli_args) {
     if (!cli_args) {
         printf("cli_args = %s\n", (char*)0);
         return;
     }
     printf(
         "cli_args = {\n"
-        "  setargsflags     = 0b%u%u%u%u%u%u%u%u\n"
-        "  configfile       = %s%s%s\n"
-        "  width            = %lu\n"
-        "  height           = %lu\n"
-        "  die_sides        = %lu\n"
-        "  exact_ending     = %s\n"
+        "  setargsflags     = 0b%u%u%u%u%u%u%u%u,\n"
+        "  configfile       = %s%s%s,\n"
+        "  width            = %lu,\n"
+        "  height           = %lu,\n"
+        "  die_sides        = %lu,\n"
+        "  exact_ending     = %s,\n"
         "  distribution     = {\n"
-        "    preset  = %s (%d)\n"
+        "    preset  = %s (%d),\n"
         "    weights = [%lu] {",
         (bool)(cli_args->setargsflags & CLIAFLAG_SNAKESANDLADDERS),
         (bool)(cli_args->setargsflags & CLIAFLAG_DISTRIBUTION),
@@ -335,22 +335,22 @@ void cli_args_print(cli_args_t* cli_args) {
     if (cli_args->distribution.weights.size != 0) {
         printf(" ");
         for (size_t i = 0; i < cli_args->distribution.weights.size; i++) {
-            const size_t* weight = array_get(&cli_args->distribution.weights, i);
+            const size_t* weight = array_getconst(&cli_args->distribution.weights, i);
             printf("%lu%s ", *weight, i != cli_args->distribution.weights.size - 1 ? "," : "");
         }
     }
     printf("}\n  },\n");
     printf(
-        "  iterations       = %lu\n"
+        "  iterations       = %lu,\n"
         "  snakesandladders = [%lu] {",
         cli_args->iterations,
-        cli_args->snakesandladders.array.size
+        cli_args->snakesandladders.size
     );
-    if (cli_args->snakesandladders.array.size != 0) {
+    if (cli_args->snakesandladders.size != 0) {
         printf("\n");
-        for (size_t i = 0; i < cli_args->snakesandladders.array.size; i++) {
-            const snakeorladder_t* sol = sals_get(&cli_args->snakesandladders, i);
-            printf("    %lu-%lu%s\n", sol->src, sol->dst, i != cli_args->snakesandladders.array.size - 1 ? "," : "");
+        for (size_t i = 0; i < cli_args->snakesandladders.size; i++) {
+            const snakeorladder_t* sol = array_getconst(&cli_args->snakesandladders, i);
+            printf("    %lu-%lu%s\n", sol->src, sol->dst, i != cli_args->snakesandladders.size - 1 ? "," : "");
         }
         printf("  ");
     }
@@ -685,21 +685,27 @@ void cli_read_sals(cli_args_t* args, int argc, char* argv[]) {
                     fprintf(stderr, "remaining characters after number in string for %sa%s.\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
                     exit(1);
                 case 7:
-                    fprintf(stderr, "value %sb%s out of range (overflow/underflow).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
+                    fprintf(stderr, "value %sa%s is 0.\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
                     exit(1);
                 case 8:
-                    fprintf(stderr, "invalid characters in %sb%s (not a number).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
+                    fprintf(stderr, "value %sb%s out of range (overflow/underflow).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
                     exit(1);
                 case 9:
+                    fprintf(stderr, "invalid characters in %sb%s (not a number).\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
+                    exit(1);
+                case 10:
                     fprintf(stderr, "remaining characters after number in string for %sb%s.\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
+                    exit(1);
+                case 11:
+                    fprintf(stderr, "value %sb%s is 0.\n", FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE));
                     exit(1);
                 default:
                     fprintf(stderr, "unknown error.\n");
                     exit(1);
             }
         }
-        if (args && !sals_add(&args->snakesandladders, &sol)) {
-            fprintf(stderr, "%serror:%s unable to add snake-or-ladder '%s' to array [capacity: %lu].\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), argv[i], args->snakesandladders.array.capacity);
+        if (args && !array_add(&args->snakesandladders, &sol)) {
+            fprintf(stderr, "%serror:%s unable to add snake-or-ladder '%s' to array [capacity: %lu].\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), argv[i], args->snakesandladders.capacity);
             exit(1);
         }
     }
