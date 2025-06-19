@@ -4,8 +4,8 @@
 
 #include <stdio.h>
 
-loadingscreen_t loadingscreen_create() {
-    loadingscreen_t loadscreen = { .valid = true };
+loadingscreen_t loadingscreen_create(const char* msg) {
+    loadingscreen_t loadscreen = { .valid = true, .msg = msg };
     int res = mtx_init(&loadscreen.mtx, mtx_timed);
     switch (res) {
         case thrd_success:
@@ -111,8 +111,6 @@ int loadingscreen_run(loadingscreen_t* loadscreen) {
     if (!loadscreen || !loadscreen->valid || !loadscreen->running)
         return 1;
 
-    printf("  Simulating");
-
     const char* frames[] = {
         "⠁", "⠃", "⠋", "⠏", "⠟", "⠿", "⠾", "⠼", "⠴", "⠰", "⠠", "⠠", "⠠", "⠠", "⠤", "⠤", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠉", "⠉", "⠈", "⠈", "⠈",
         "⠈", "⠘", "⠙", "⠹", "⠻", "⠿", "⠷", "⠧", "⠦", "⠆", "⠄", "⠄", "⠄", "⠄", "⠆", "⠆", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠰", "⠰", "⠠", "⠠", "⠠",
@@ -137,7 +135,7 @@ int loadingscreen_run(loadingscreen_t* loadscreen) {
     cvts_cursor_hide();
     do {
         cvts_set_text_format(framecolors[framecolor]);
-        printf("\r%s%s", frames[frame], FMT(FMTVAL_FG_DEFAULT));
+        printf("\r%s%s%s%s", frames[frame], FMT(FMTVAL_FG_DEFAULT), loadscreen->msg ? " " : "", loadscreen->msg ? loadscreen->msg : "");
         cvts_cursor_right(9999);
         fflush(stdout);
         frame = (frame + 1) % framecount;

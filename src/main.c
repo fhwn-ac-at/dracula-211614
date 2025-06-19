@@ -1,6 +1,7 @@
 #include "assetmanager.h"
 #include "cli.h"
 #include "simulator.h"
+#include "statistics.h"
 
 #include "cvts.h"
 #include "tsrand48.h"
@@ -64,7 +65,10 @@ int main(int argc, char* argv[]) {
     printf("\n");
     free(sides);
 
-    simulate(&game, cli_args.iterations);
+    simulator_t simulator = simulate(&game, cli_args.iterations);
+
+    stats_t stats = stats_analyze(&simulator);
+    stats_print(&stats);
 
     assetmanager_free_all();
 }

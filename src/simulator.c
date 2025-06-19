@@ -1,5 +1,6 @@
 #include "simulator.h"
 
+#include "assetmanager.h"
 #include "cvts.h"
 #include "loadingscreen.h"
 #include "tsrand48.h"
@@ -15,7 +16,8 @@ simulation_t simulation_create(simulator_t* simulator) {
         return simulation_create_empty();
     simulation_t sim = {
         .simulator = simulator,
-        .soluses = array_create(simulator->soldsts.size, sizeof(size_t), 0)
+        .soluses = array_create(simulator->soldsts.size, sizeof(size_t), 0),
+        .dices = array_create(0, sizeof(size_t), 0)
     };
     size_t inituseval = 0;
     for (size_t i = 0; i < sim.soluses.capacity; i++) {
@@ -27,11 +29,12 @@ simulation_t simulation_create(simulator_t* simulator) {
     return sim;
 }
 
-void simulation_free(simulation_t* simulaton) {
-    if (!simulaton)
+void simulation_free(simulation_t* simulation) {
+    if (!simulation)
         return;
-    array_free(&simulaton->soluses, 0);
-    *simulaton = simulation_create_empty();
+    array_free(&simulation->soluses, 0);
+    array_free(&simulation->dices, 0);
+    *simulation = simulation_create_empty();
 }
 
 simulator_t simulator_create_empty() {
@@ -92,13 +95,14 @@ void simulator_free(simulator_t* simulator) {
     *simulator = simulator_create_empty();
 }
 
-void simulate(const game_t* game, size_t simcount) {
+simulator_t simulate(const game_t* game, size_t simcount) {
     // create simulator and loading screen
     simulator_t simulator = simulator_create(game, simcount);
+    assetmanager_add(&simulator, (deallocator_fn_t)simulator_free);
     #ifdef DEBUG
     simulator_print(&simulator, 0, false);
     #endif
-    loadingscreen_t loadscreen = loadingscreen_create();
+    loadingscreen_t loadscreen = loadingscreen_create("Simulating");
 
     // start rendering loading screen
     loadingscreen_start(&loadscreen);
@@ -143,9 +147,10 @@ void simulate(const game_t* game, size_t simcount) {
     simulator_print(&simulator, 0, false);
 #endif
 
-    // free simulator and loading screen
+    // free loading screen
     loadingscreen_destroy(&loadscreen);
-    simulator_free(&simulator);
+
+    return simulator;
 }
 
 int simulation_run(simulation_t* simulation) {
@@ -162,10 +167,10 @@ int simulation_run(simulation_t* simulation) {
 
     // start with player position outside the playing field (1 based index, i.e. first cell has index 1)
     simulation->playerpos = 0;
-    while (simulation->playerpos != lastcell && simulation->dices < SIMULATION_DICE_LIMIT) {
+    while (simulation->playerpos != lastcell && simulation->dices.size < SIMULATION_DICE_LIMIT) {
         // roll the die
         size_t side = dice(&game->die);
-        simulation->dices++;
+        array_add(&simulation->dices, &side);
         // end game if it should end
         if (simulation->playerpos + side == lastcell || (!game->exact_ending && simulation->playerpos + side > lastcell)) {
             simulation->playerpos = lastcell;
@@ -185,7 +190,7 @@ int simulation_run(simulation_t* simulation) {
         }
     }
     // check if game was aborted due to reaching the dice limit before the game ended
-    if (simulation->dices == SIMULATION_DICE_LIMIT && simulation->playerpos != lastcell)
+    if (simulation->dices.size == SIMULATION_DICE_LIMIT && simulation->playerpos != lastcell)
         simulation->aborted = true;
 
     return 0;
@@ -253,14 +258,12 @@ void simulation_print(const simulation_t* simulation, uint32_t indent, bool inde
         "%*s  simulator = simulator_t @ %p,\n"
         "%*s  thread    = %lu,\n"
         "%*s  aborted   = %s,\n"
-        "%*s  dices     = %lu,\n"
         "%*s  playerpos = %lu,\n"
         "%*s  soluses   = [%lu] {",
         indentfirst ? indent : 0, "",
         indent, "", simulation->simulator,
         indent, "", simulation->thread,
         indent, "", simulation->aborted ? "true" : "false",
-        indent, "", simulation->dices,
         indent, "", simulation->playerpos,
         indent, "", simulation->soluses.size
     );
@@ -273,6 +276,19 @@ void simulation_print(const simulation_t* simulation, uint32_t indent, bool inde
                 const size_t* uses = array_getconst(&simulation->soluses, idx->value);
                 printf("%*s    [%lu] %lu-%lu %lu%s\n", indent, "", idx->value, sol.src, sol.dst, *uses, idx->value != simulation->soluses.size - 1 ? "," : "");
             }
+        }
+        printf("%*s  ", indent, "");
+    }
+    printf(
+        "},\n"
+        "%*s  dices     = [%lu] {",
+        indent, "", simulation->dices.size
+    );
+    if (simulation->dices.size != 0) {
+        printf("\n");
+        for (size_t i = 0; i < simulation->dices.size; i++) {
+            const size_t* dice = (size_t*)array_getconst(&simulation->dices, i);
+            printf("%*s    [%lu] %lu%s\n", indent, "", i, *dice, i != simulation->dices.size - 1 ? "," : "");
         }
         printf("%*s  ", indent, "");
     }

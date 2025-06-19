@@ -5,7 +5,7 @@
 
 #include <threads.h>
 
-#define SIMULATION_DICE_LIMIT 10000lu       // The maximum number of times a game simulation is allowed to dice before aborting execution. (The simulation potentially ran into an infinite loop)
+#define SIMULATION_DICE_LIMIT 10000lu      // The maximum number of times a game simulation is allowed to dice before aborting execution. (The simulation potentially ran into an infinite loop)
 
 /**
  * Struct for an optional size_t. Can optionally have value of type size_t.
@@ -32,9 +32,9 @@ typedef struct simulation_t {
     simulator_t* simulator;         // The simulator the simulation belongs to
     thrd_t thread;                  // The identifier of the thread the simulation is run on.
     bool aborted;                   // Indicates if the simulation was aborted because the SIMULATION_DICE_LIMIT was reached but the game is still running (potentially ran into an infinite loop)
-    size_t dices;                   // The number of times the die was diced during the simulation
-    array_t soluses;                // The number of times each snake or ladder was used during the simulation (element type size_t)
     size_t playerpos;               // The player's position
+    array_t soluses;                // The number of times each snake or ladder was used during the simulation (element type: size_t)
+    array_t dices;                  // The sequence of diced sides during the simulation (element type: size_t)
 } simulation_t;
 
 /**
@@ -83,8 +83,9 @@ void simulator_free(simulator_t* simulator);
  * The simulations are run simultaneously on separate threads.
  * @param game The game that should be simulated.
  * @param simcount The number of simulations that should be run.
+ * @return The simulator that ran the simulations.
  */
-void simulate(const game_t* game, size_t simcount);
+simulator_t simulate(const game_t* game, size_t simcount);
 
 /**
  * Runs the given simulation. The simulation holds a reference to the simulator the

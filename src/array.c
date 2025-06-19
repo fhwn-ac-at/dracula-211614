@@ -127,3 +127,24 @@ bool array_rmv(array_t* array, size_t index) {
     array->size--;
     return true;
 }
+
+array_t* array_copy(array_t* dst, const array_t* src) {
+    if (!dst || !src || !array_reserve(dst, src->size))
+        return 0;
+    array_clear(dst);
+    for (size_t i = 0; i < src->size; i++)
+        if (!array_add(dst, array_getconst(src, i)))
+            return 0;
+    return dst;
+}
+
+array_t* array_move(array_t* dst, array_t* src) {
+    if (!dst || !src)
+        return 0;
+    array_free(dst, 0);
+    *dst = *src;
+    src->capacity = 0;
+    src->size = 0;
+    src->data = 0;
+    return dst;
+}

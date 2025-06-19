@@ -12,15 +12,17 @@ typedef struct loadingscreen_t {
     mtx_t mtx;                      // The timed mutex used for the condition in a loading screen
     cnd_t cnd;                      // The condition that should be signalled to stop the loading screen
     thrd_t thrd;                    // The thread that is run to render the loading screen
+    const char* msg;                // The text that should be output next to the loading symbol
 } loadingscreen_t;
 
 /**
- * Creates a new loading screen initializing it's mutex and condition and setting valid to true on success.
+ * Creates a new loading screen with the given message initializing it's mutex and condition and setting valid to true on success.
  * If an error occurs an appropriate warning is output on stderr and
  * an empty loading screen with the member valid set to false is returned.
+ * @param msg The message that should be printed next to the loading symbol. If no message is given no message is printed.
  * @return The created loading screen with valid set to true, an empty loading screen with valid set to false.
  */
-loadingscreen_t loadingscreen_create();
+loadingscreen_t loadingscreen_create(const char* msg);
 
 /**
  * Destroys the given loading screen if it's member valid is true.

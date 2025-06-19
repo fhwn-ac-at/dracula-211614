@@ -162,3 +162,24 @@ bool array_contains(array_t* array, const void* element, comparator_fn_t compara
  * @return true if the element was removed successfully, false otherwise.
  */
 bool array_rmv(array_t* array, size_t index);
+
+/**
+ * Copies the source array and replaces the destination array with the copy keeping the already allocated memory block of the destination array if possible.
+ * The destination array is not guaranteed to stay unmodified if copying fails.
+ * @param dst The destination array that should be replaced by a copy of the source array.
+ * @param src The source array that should be copied into the destination array.
+ * @return The address of the destination array, 0 if copying failed.
+ */
+array_t* array_copy(array_t* dst, const array_t* src);
+
+/**
+ * Moves the source array to replace the destination array.
+ * If no destination or source was given no action is performed and 0 is returned,
+ * otherwise the destination array is freed and ownership of the source array's memory buffer is transferred to the destination array.
+ * The source array no longer owns a memory buffer, thus it has a capacity and size of 0 but it's element size and comparator stay in tact.
+ * If the source array initially does not own a memory buffer the destination array's memory buffer is still freed.
+ * @param dst The destination array the source array should be moved into.
+ * @param src The source array that should be moved into the destination array.
+ * @return The address of the destination array, 0 if moving failed.
+ */
+array_t* array_move(array_t* dst, array_t* src);
