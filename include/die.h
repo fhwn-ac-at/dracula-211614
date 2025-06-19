@@ -6,7 +6,7 @@
  * Struct for a die.
  */
 typedef struct die_t {
-    array_t sides;          // probabilities for all sides of the die
+    array_t sides;          // probabilities for all sides of the die (element type: double)
 } die_t;
 
 /**

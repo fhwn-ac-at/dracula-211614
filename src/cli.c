@@ -42,7 +42,7 @@ void cli_args_free(cli_args_t *cli_args) {
     if (!cli_args)
         return;
     distr_free(&cli_args->distribution);
-    array_free(&cli_args->snakesandladders);
+    array_free(&cli_args->snakesandladders, 0);
     *cli_args = (cli_args_t){};
 }
 
@@ -69,7 +69,7 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
     struct option longopts[9];
     if (isconfigfile) {
         // disable option -c --config-file if args came from a config file
-        optstring = ":h:x:y:s:ed:i:";
+        optstring = ":hx:y:s:ed:i:";
         longopts[0] = (struct option){ "help"        , 0, 0, 'h' };
         longopts[1] = (struct option){ "width"       , 1, 0, 'x' };
         longopts[2] = (struct option){ "height"      , 1, 0, 'y' };
@@ -107,7 +107,7 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
                     fprintf(stderr, "unknown preset.\n");
                     exit(1);
                 case 3:
-                    fprintf(stderr, "more weights than die sides.\n");
+                    fprintf(stderr, "more weights than die sides (%lu > %lu).\n", args.distribution.weights.size, args.die_sides);
                     exit(1);
                 case 4:
                     fprintf(stderr, "unable to add weight.\n");
@@ -286,12 +286,12 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
             }
             case ':':
             {
-                fprintf(stderr, "%serror:%s missing value for option '%c'.\n", FMT(FMTVAL_FG_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
+                fprintf(stderr, "%serror:%s missing value for option '%c'.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
                 exit(1);
             }
             case '?':
             {
-                fprintf(stderr, "%serror:%s unknown option '%c'.\n", FMT(FMTVAL_FG_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
+                fprintf(stderr, "%serror:%s unknown option '%c'.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
                 exit(1);
             }
         }
@@ -396,22 +396,26 @@ void cli_help() {
         "                                  %sPi%s = %sWi%s / %sS%s  %s// probability of side %si%s to be diced in a dice roll%s\n"
         "                             Alternatively to providing a weight sequence as described above, it is possible to use one of the following presets\n"
         "                             whose weights are calculated in a certain way based on the die sides %ss%s.\n"
-        "                             - uniform    A uniform distribution %s(default)%s\n"
-        "                                           e.g. for %ss%s = 6 the weights are 1,1,1,1,1,1\n"
-        "                             - twodice    The distribution that arises when using two uniform and equal dice with %ss%s/2 sides each and using the\n"
-        "                                           sum of the two diced values as overall dice result.\n"
-        "                                           e.g. for %ss%s = 12 (two uniform dice with %ss%s/2 = 6 sides each)\n"
-        "                                                SUM \x1b(0x\x1b(B 1  2  3  4  5  6 \n"
-        "                                                \x1b(0qqqqnqqqqqqqqqqqqqqqqqqq\x1b(B\n"
-        "                                                  1 \x1b(0x\x1b(B 2  3  4  5  6  7 \n"
-        "                                                  2 \x1b(0x\x1b(B 3  4  5  6  7  8 \n"
-        "                                                  3 \x1b(0x\x1b(B 4  5  6  7  8  9 \n"
-        "                                                  4 \x1b(0x\x1b(B 5  6  7  8  9 10 \n"
-        "                                                  5 \x1b(0x\x1b(B 6  7  8  9 10 11 \n"
-        "                                                  6 \x1b(0x\x1b(B 7  8  9 10 11 12 \n"
-        "                                                %s// count how often side (sum) is hit to determine their weights.%s\n"
-        "                                                %s// these are all possible ways to dice each value (sum) when using two uniform 6-sided dice%s\n"
-        "                                                -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1\n"
+        "                             - uniform       A uniform distribution %s(default)%s\n"
+        "                                              e.g. for %ss%s = 6 the weights are 1,1,1,1,1,1\n"
+        "                             - twodice       The distribution that arises when using two uniform and equal dice with %ss%s/2 sides each\n"
+        "                                              and using the sum of the two diced values as overall dice result.\n"
+        "                                              e.g. for %ss%s = 12 (two uniform dice with %ss%s/2 = 6 sides each)\n"
+        "                                                   SUM \x1b(0x\x1b(B 1  2  3  4  5  6 \n"
+        "                                                   \x1b(0qqqqnqqqqqqqqqqqqqqqqqqq\x1b(B\n"
+        "                                                     1 \x1b(0x\x1b(B 2  3  4  5  6  7 \n"
+        "                                                     2 \x1b(0x\x1b(B 3  4  5  6  7  8 \n"
+        "                                                     3 \x1b(0x\x1b(B 4  5  6  7  8  9 \n"
+        "                                                     4 \x1b(0x\x1b(B 5  6  7  8  9 10 \n"
+        "                                                     5 \x1b(0x\x1b(B 6  7  8  9 10 11 \n"
+        "                                                     6 \x1b(0x\x1b(B 7  8  9 10 11 12 \n"
+        "                                                   %s// count how often side (sum) is hit to determine their weights.%s\n"
+        "                                                   %s// these are all possible ways to dice each value (sum) when using two uniform 6-sided dice%s\n"
+        "                                                   -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1\n"
+        "                             - upstairs      A distribution with it's first weight being 1 and each following weight being incremented by 1.\n"
+        "                                              e.g. for %ss%s = 6 the weights are 1,2,3,4,5,6\n"
+        "                             - downstairs    A distribution with it's last weight being 1 and each previous weight being incremented by 1.\n"
+        "                                              e.g. for %ss%s = 6 the weights are 6,5,4,3,2,1\n"
         "  -i, --iterations %sval%s      The number of times the game should be simulated which must be an integer value >= %lu. The default is %lu.\n"
         "\n",
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
@@ -439,6 +443,8 @@ void cli_help() {
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_ITERATIONS_MIN, OPTVAL_ITERATIONS_DEFAULT
@@ -512,8 +518,8 @@ cli_configfile_args_t cli_read_configfile(const char* filepath) {
     fclose(file);
 
     if (error) {
-        array_free(&args);
-        array_free(&argsstr);
+        array_free(&args, 0);
+        array_free(&argsstr, 0);
         exit(1);
     }
 
@@ -574,7 +580,7 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
             else
                 fprintf(stderr, "%serror:%s unable to add char to argument in configfile.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
             if (!argsstr)
-                array_free(arg);
+                array_free(arg, 0);
             return 0;
         }
         filepos_advance(pos, c);
@@ -602,7 +608,7 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
                 fprintf(stderr, "%serror:%s argument ended with unclosed quoted section in configfile.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
         }
         if (!argsstr)
-            array_free(arg);
+            array_free(arg, 0);
         return 0;
     }
 
@@ -617,7 +623,7 @@ char* cli_read_configfile_arg(FILE* file, array_t* argsstr, filepos_t* pos, int*
         else
             fprintf(stderr, "%serror:%s unable to add null-terminator to argument in configfile.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
         if (!argsstr)
-            array_free(arg);
+            array_free(arg, 0);
         return 0;
     }
     if (!startedarg)

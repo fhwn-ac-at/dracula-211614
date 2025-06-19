@@ -35,11 +35,15 @@ void array_free_full(array_t* array) {
     *array = (array_t){};
 }
 
-void array_free(array_t* array) {
+void array_free(array_t* array, element_fn_t destructor) {
     if (!array)
         return;
-    if (array->data)
+    if (array->data) {
+        if (destructor)
+            for (size_t i = 0; i < array->size; i++)
+                destructor(array_get(array, i));
         free(array->data);
+    }
     array->data = 0;
     array->capacity = 0;
     array->size = 0;
@@ -99,17 +103,19 @@ void* array_add(array_t* array, const void* element) {
     return array_set(array, array->size++, element);
 }
 
-void* array_find(array_t* array, const void* element) {
+void* array_find(array_t* array, const void* element, comparator_fn_t comparator) {
     if (!array || !element)
         return 0;
-    for (size_t i = 0; i < array->size; i++)
-        if (array_value_compare(array, element, &array->data[i * array->elementsize]) == 0)
-            return &array->data[i * array->elementsize];
+    for (size_t i = 0; i < array->size; i++) {
+        void* el = array_get(array, i);
+        if ((comparator ? comparator(array->elementsize, element, el) : array_value_compare(array, element, el)) == 0)
+            return el;
+    }
     return 0;
 }
 
-bool array_contains(array_t* array, const void* element) {
-    return array_find(array, element);
+bool array_contains(array_t* array, const void* element, comparator_fn_t comparator) {
+    return array_find(array, element, comparator);
 }
 
 bool array_rmv(array_t* array, size_t index) {

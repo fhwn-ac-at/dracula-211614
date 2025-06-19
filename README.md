@@ -9,7 +9,7 @@ The C library `getopt.h` is used for processing command line arguments.
 When running the program with the `-h` or `--help` option a help text is printed and the program terminates.
 
 ```
-sals v0.1.3
+sals v0.2.1
 Usage: sals [options] <snake-or-ladder>...
 
   <snake-or-ladder>         A string containing two positive integers separated by a '-' character. Format: a-b.
@@ -46,23 +46,27 @@ options:
                                   Pi = Wi / S  // probability of side i to be diced in a dice roll
                              Alternatively to providing a weight sequence as described above, it is possible to use one of the following presets
                              whose weights are calculated in a certain way based on the die sides s.
-                             - uniform    A uniform distribution (default)
-                                           e.g. for s = 6 the weights are 1,1,1,1,1,1
-                             - twodice    The distribution that arises when using two uniform and equal dice with s/2 sides each and using the
-                                           sum of the two diced values as overall dice result.
-                                           e.g. for s = 12 (two uniform dice with s/2 = 6 sides each)
-                                                SUM │ 1  2  3  4  5  6 
-                                                ────┼───────────────────
-                                                  1 │ 2  3  4  5  6  7 
-                                                  2 │ 3  4  5  6  7  8 
-                                                  3 │ 4  5  6  7  8  9 
-                                                  4 │ 5  6  7  8  9 10 
-                                                  5 │ 6  7  8  9 10 11 
-                                                  6 │ 7  8  9 10 11 12 
-                                                // count how often side (sum) is hit to determine their weights.
-                                                // these are all possible ways to dice each value (sum) when using two uniform 6-sided dice
-                                                -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1
-  -i, --iterations val      The number of times the game should be simulated which must be an integer value >= 1. The default is 100000.
+                             - uniform       A uniform distribution (default)
+                                              e.g. for s = 6 the weights are 1,1,1,1,1,1
+                             - twodice       The distribution that arises when using two uniform and equal dice with s/2 sides each
+                                              and using the sum of the two diced values as overall dice result.
+                                              e.g. for s = 12 (two uniform dice with s/2 = 6 sides each)
+                                                   SUM │ 1  2  3  4  5  6
+                                                   ────┼───────────────────
+                                                     1 │ 2  3  4  5  6  7
+                                                     2 │ 3  4  5  6  7  8
+                                                     3 │ 4  5  6  7  8  9
+                                                     4 │ 5  6  7  8  9 10
+                                                     5 │ 6  7  8  9 10 11
+                                                     6 │ 7  8  9 10 11 12
+                                                   // count how often side (sum) is hit to determine their weights.
+                                                   // these are all possible ways to dice each value (sum) when using two uniform 6-sided dice
+                                                   -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1
+                             - upstairs      A distribution with it's first weight being 1 and each following weight being incremented by 1.
+                                              e.g. for s = 6 the weights are 1,2,3,4,5,6
+                             - downstairs    A distribution with it's last weight being 1 and each previous weight being incremented by 1.
+                                              e.g. for s = 6 the weights are 6,5,4,3,2,1
+  -i, --iterations val      The number of times the game should be simulated which must be an integer value >= 1. The default is 1000.
 ```
 
 ## Assignment: 6th Assignment

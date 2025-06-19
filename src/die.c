@@ -24,7 +24,7 @@ die_t die_create(const distribution_t* distr) {
 void die_free(die_t* die) {
     if (!die)
         return;
-    array_free(&die->sides);
+    array_free(&die->sides, 0);
     *die = (die_t){};
 }
 
@@ -43,5 +43,5 @@ size_t dice(const die_t* die) {
         if (random < offset)
             return side + 1;
     }
-    return side + 1;
+    return side;
 }

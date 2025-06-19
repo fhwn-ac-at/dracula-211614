@@ -20,9 +20,9 @@ typedef struct optional_size_t {
  */
 typedef struct simulator_t {
     const game_t* game;             // The game simulations should be run on
-    array_t sals;                   // The snakes and ladders of the game
-    array_t solidxs;                // Maps each cell index to the index of it's corresponding snake or ladder in soldsts array
-    array_t sims;                   // The array of simulations
+    array_t soldsts;                // The destinations of the snakes and ladders of the game (element type: size_t)
+    array_t solidxs;                // Maps each cell index to the index of it's corresponding snake or ladder in soldsts array (element type: optional_size_t)
+    array_t sims;                   // The array of simulations (element simulation_t)
 } simulator_t;
 
 /**
@@ -33,8 +33,30 @@ typedef struct simulation_t {
     thrd_t thread;                  // The identifier of the thread the simulation is run on.
     bool aborted;                   // Indicates if the simulation was aborted because the SIMULATION_DICE_LIMIT was reached but the game is still running (potentially ran into an infinite loop)
     size_t dices;                   // The number of times the die was diced during the simulation
-    array_t soluses;                // The number of times each snake or ladder was used during the simulation
+    array_t soluses;                // The number of times each snake or ladder was used during the simulation (element type size_t)
+    size_t playerpos;               // The player's position
 } simulation_t;
+
+/**
+ * Creates an empty simulation.
+ * @return The created empty simulation.
+ */
+simulation_t simulation_create_empty();
+
+/**
+ * Creates a new simulation for the given simulator.
+ * The initial capacity of the simulation's soluses array is the number of snakes and ladders that exist in the simulator's game.
+ * If no simulator was given an empty simulation is created.
+ * @param simulator The simulator the created simulation belongs to.
+ * @return The created simulation.
+ */
+simulation_t simulation_create(simulator_t* simulator);
+
+/**
+ * Frees the given simulation freeing it's soluses array and resetting to an empty simulation.
+ * @param simulation The simulation that should be freed.
+ */
+void simulation_free(simulation_t* simulation);
 
 /**
  * Creates an empty simulator.
@@ -51,7 +73,7 @@ simulator_t simulator_create_empty();
 simulator_t simulator_create(const game_t* game, size_t simcount);
 
 /**
- * Frees the given simulator freeing it's soldsts and solidxs arrays and resets to an empty simulator.
+ * Frees the given simulator freeing it's soldsts, solidxs and sims arrays and resetting to an empty simulator.
  * @param simulator The simulator that should be reset.
  */
 void simulator_free(simulator_t* simulator);
@@ -68,7 +90,10 @@ void simulate(const game_t* game, size_t simcount);
  * Runs the given simulation. The simulation holds a reference to the simulator the
  * simulation belongs to which contains information about the game that should be simulated.
  * @param simulation The simulation that should be run.
- * @return 0 if the simulation ran successfully, the error code of an occurred error otherwise.
+ * @return The error code, 0 on success.
+ * 
+ * - 0 successfully ran simulation
+ * 
  * - 1 no simulation given
  */
 int simulation_run(simulation_t* simulation);
@@ -76,5 +101,16 @@ int simulation_run(simulation_t* simulation);
 /**
  * Prints the given simulator.
  * @param simulator The simulator that should be printed.
+ * @param indent The number of space characters the output should be indented with.
+ * @param indentfirst Indicates wether the first line should be indented.
  */
-void simulator_print(const simulator_t* simulator);
+void simulator_print(const simulator_t* simulator, uint32_t indent, bool indentfirst);
+
+/**
+ * Prints the given simulation with the given indent.
+ * if indentfirst is false the first line is not indented.
+ * @param simulation The simulation that should be printed.
+ * @param indent The number of space characters the output should be indented with.
+ * @param indentfirst Indicates wether the first line should be indented.
+ */
+void simulation_print(const simulation_t* simulation, uint32_t indent, bool indentfirst);

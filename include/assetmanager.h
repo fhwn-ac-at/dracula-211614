@@ -26,7 +26,7 @@ typedef struct asset_t {
  * If an asset has no deallocator when it is freed the asset is removed from the manager but the data remains untouched.
  */
 typedef struct assetmanager_t {
-    array_t assets;             // The array of the managed asset_ts
+    array_t assets;             // The array of the managed assets (element type: asset_t)
 } assetmanager_t;
 
 // The global instance of the asset manager.

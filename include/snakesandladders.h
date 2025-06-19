@@ -29,17 +29,29 @@ bool isladder(snakeorladder_t* sol);
  * Format a-b where a and b are positive integer values > 0.
  * @param str The string that should be parsed.
  * @param error The address where the error code should be stored if it is given
+ * 
  * -  0 successfully parsed string
+ * 
  * -  1 no string given
+ * 
  * -  2 unable to duplicate the given string
+ * 
  * -  3 string does not contain the split character '-'
+ * 
  * -  4 value a out of range (overflow/underflow)
+ * 
  * -  5 invalid characters in a (not a number)
+ * 
  * -  6 remaining characters after number in string for a
+ * 
  * -  7 a is 0
+ * 
  * -  8 value b out of range (overflow/underflow)
+ * 
  * -  9 invalid characters in b (not a number)
+ * 
  * - 10 remaining characters after number in string for b
+ * 
  * - 11 b is 0
  * @return The parsed snakeorladder_t. If the string could not be parsed (snakeorladder_t){.a=0,.b=0 } is returned and the error code is set in error.
  */

@@ -9,9 +9,11 @@
 #include <string.h>
 
 distr_preset_info_t distr_preset_infos[DISTR_PRESET_COUNT] = {
-    { 0         },
-    { "uniform" },
-    { "twodice" }
+    { 0            },
+    { "uniform"    },
+    { "twodice"    },
+    { "upstairs"   },
+    { "downstairs" }
 };
 
 distribution_t distr_create_empty() {
@@ -29,7 +31,7 @@ bool distr_isempty(const distribution_t* distr) {
 void distr_free(distribution_t* distr) {
     if (!distr)
         return;
-    array_free(&distr->weights);
+    array_free(&distr->weights, 0);
     *distr = distr_create_empty();
 }
 
@@ -118,6 +120,24 @@ int distr_build(distribution_t* distr, size_t die_sides) {
                 return error + 3;
             break;
         }
+        case DISTR_PRESET_UPSTAIRS:
+        {
+            distr_free(distr);
+            int error = 0;
+            *distr = distr_preset_build_upstairs(die_sides, &error);
+            if (error)
+                return error + 3;
+            break;
+        }
+        case DISTR_PRESET_DOWNSTAIRS:
+        {
+            distr_free(distr);
+            int error = 0;
+            *distr = distr_preset_build_downstairs(die_sides, &error);
+            if (error)
+                return error + 3;
+            break;
+        }
         default:
             return 3;
     }
@@ -160,6 +180,34 @@ distribution_t distr_preset_build_twodice(size_t die_sides, int* error) {
         }
     }
     for (; weight != 0; weight--) {
+        if (!array_add(&distr.weights, &weight)) {
+            if (error)
+                *error = 1;
+            distr_free(&distr);
+            return distr_create_empty();
+        }
+    }
+    return distr;
+}
+
+distribution_t distr_preset_build_upstairs(size_t die_sides, int* error) {
+    distribution_t distr = distr_create(DISTR_PRESET_UPSTAIRS);
+    size_t weight = 1;
+    for (size_t i = 0; i < die_sides; i++, weight++) {
+        if (!array_add(&distr.weights, &weight)) {
+            if (error)
+                *error = 1;
+            distr_free(&distr);
+            return distr_create_empty();
+        }
+    }
+    return distr;
+}
+
+distribution_t distr_preset_build_downstairs(size_t die_sides, int* error) {
+    distribution_t distr = distr_create(DISTR_PRESET_UPSTAIRS);
+    size_t weight = die_sides;
+    for (size_t i = 0; i < die_sides; i++, weight--) {
         if (!array_add(&distr.weights, &weight)) {
             if (error)
                 *error = 1;

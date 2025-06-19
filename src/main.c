@@ -32,6 +32,9 @@ int main(int argc, char* argv[]) {
     #endif
 
     game_t game = game_setup(&cli_args);
+
+    printf("Snakes and Ladders Simulator\n\n");
+
     #ifdef DEBUG
     printf("game adjmat\n");
     adjmat_print(&game.adjmat);

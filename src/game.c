@@ -28,6 +28,9 @@ game_t game_setup(cli_args_t* cli_args) {
         exit(1);
     }
     
+    // set if game must have exact ending
+    game.exact_ending = cli_args->exact_ending;
+
     // validate snakes and ladders
     array_t* sals = &cli_args->snakesandladders;
     for (size_t i = 0; i < sals->size; i++) {
@@ -71,7 +74,6 @@ game_t game_setup(cli_args_t* cli_args) {
         sol->src--;
         sol->dst--;
     }
-
     // create graph from snakes and ladders
     game.adjmat = adjmat_create(cellcount, sals->size, sals->data);
     

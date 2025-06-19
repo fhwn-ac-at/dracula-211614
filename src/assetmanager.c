@@ -23,7 +23,7 @@ void assetmanager_free_all() {
         if (asset->deallocator)
             asset->deallocator(asset->data);
     }
-    array_free(&assetmanager.assets);
+    array_free(&assetmanager.assets, 0);
 }
 
 bool assetmanager_add(void* data, deallocator_fn_t deallocator) {

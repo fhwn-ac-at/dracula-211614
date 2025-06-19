@@ -113,73 +113,35 @@ int loadingscreen_run(loadingscreen_t* loadscreen) {
 
     printf("  Simulating");
 
-#define FRAMES_VARIANT 1
-
-#if FRAMES_VARIANT == 0
-    const char* frames[] = {
-        "⠁", "⠃", "⠋", "⠏", "⠟", "⠿", "⠾", "⠼", "⠴", "⠰", "⠠", "⠰", "⠘",
-        "⠈", "⠘", "⠙", "⠹", "⠻", "⠿", "⠷", "⠧", "⠦", "⠆", "⠄", "⠤",
-        "⠠", "⠰", "⠴", "⠼", "⠾", "⠿", "⠟", "⠏", "⠋", "⠃", "⠁", "⠃", "⠆",
-        "⠄", "⠆", "⠦", "⠧", "⠷", "⠿", "⠻", "⠹", "⠙", "⠘", "⠈", "⠉"
-    };
-#elif FRAMES_VARIANT == 1
     const char* frames[] = {
         "⠁", "⠃", "⠋", "⠏", "⠟", "⠿", "⠾", "⠼", "⠴", "⠰", "⠠", "⠠", "⠠", "⠠", "⠤", "⠤", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠉", "⠉", "⠈", "⠈", "⠈",
         "⠈", "⠘", "⠙", "⠹", "⠻", "⠿", "⠷", "⠧", "⠦", "⠆", "⠄", "⠄", "⠄", "⠄", "⠆", "⠆", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠰", "⠰", "⠠", "⠠", "⠠",
         "⠠", "⠰", "⠴", "⠼", "⠾", "⠿", "⠟", "⠏", "⠋", "⠃", "⠁", "⠁", "⠁", "⠁", "⠉", "⠉", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠤", "⠤", "⠄", "⠄", "⠄",
         "⠄", "⠆", "⠦", "⠧", "⠷", "⠿", "⠻", "⠹", "⠙", "⠘", "⠈", "⠈", "⠈", "⠈", "⠘", "⠘", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠃", "⠃", "⠁", "⠁", "⠁"
     };
-#elif FRAMES_VARIANT == 2
-    const char* frames[] = {
-        "⠁", "⠃", "⠋", "⠚", "⠞", "⠖", "⠴", "⠤", "⠠", "⠠", "⠠", "⠤", "⠤", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠉", "⠉", "⠈", "⠈",
-        "⠈", "⠉", "⠙", "⠓", "⠳", "⠲", "⠦", "⠆", "⠄", "⠄", "⠄", "⠆", "⠆", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠰", "⠰", "⠠", "⠠",
-        "⠠", "⠰", "⠴", "⠖", "⠞", "⠚", "⠋", "⠉", "⠁", "⠁", "⠁", "⠉", "⠉", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠤", "⠤", "⠄", "⠄",
-        "⠄", "⠤", "⠦", "⠲", "⠳", "⠓", "⠙", "⠘", "⠈", "⠈", "⠈", "⠘", "⠘", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠃", "⠃", "⠁", "⠁"
-    };
-#elif FRAMES_VARIANT == 3
-    const char* frames[] = {
-        "⠁", "⠉", "⠋", "⠚", "⠞", "⠖", "⠴", "⠰", "⠠", "⠠", "⠠", "⠤", "⠤", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠉", "⠉", "⠈", "⠈",
-        "⠈", "⠘", "⠙", "⠓", "⠳", "⠲", "⠦", "⠤", "⠄", "⠄", "⠄", "⠆", "⠆", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠰", "⠰", "⠠", "⠠",
-        "⠠", "⠤", "⠴", "⠖", "⠞", "⠚", "⠋", "⠃", "⠁", "⠁", "⠁", "⠉", "⠉", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠤", "⠤", "⠄", "⠄",
-        "⠄", "⠆", "⠦", "⠲", "⠳", "⠓", "⠙", "⠉", "⠈", "⠈", "⠈", "⠘", "⠘", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠃", "⠃", "⠁", "⠁"
-    };
-#elif FRAMES_VARIANT == 4
-    const char* frames[] = {
-        "⠁", "⠉", "⠋", "⠚", "⠞", "⠖", "⠴", "⠰", "⠠", "⠠", "⠠", "⠤", "⠤", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠉", "⠉", "⠈", "⠈",
-        "⠈", "⠘", "⠙", "⠓", "⠳", "⠲", "⠦", "⠤", "⠄", "⠄", "⠄", "⠆", "⠆", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠰", "⠰", "⠠", "⠠",
-        "⠠", "⠤", "⠴", "⠖", "⠞", "⠚", "⠋", "⠃", "⠁", "⠁", "⠁", "⠉", "⠉", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠤", "⠤", "⠄", "⠄",
-        "⠄", "⠆", "⠦", "⠲", "⠳", "⠓", "⠙", "⠉", "⠈", "⠈", "⠈", "⠘", "⠘", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠃", "⠃", "⠁", "⠁"
-    };
-#elif FRAMES_VARIANT == 5
-    const char* frames[] = {
-        "⠁", "⠃", "⠃", "⠋", "⠚", "⠞", "⠖", "⠴", "⠤", "⠤", "⠠", "⠠", "⠠", "⠤", "⠤", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠉", "⠉", "⠈", "⠈",
-        "⠈", "⠉", "⠉", "⠙", "⠓", "⠳", "⠲", "⠦", "⠆", "⠆", "⠄", "⠄", "⠄", "⠆", "⠆", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠰", "⠰", "⠠", "⠠",
-        "⠠", "⠰", "⠰", "⠴", "⠖", "⠞", "⠚", "⠋", "⠉", "⠉", "⠁", "⠁", "⠁", "⠉", "⠉", "⠙", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠤", "⠤", "⠄", "⠄",
-        "⠄", "⠤", "⠤", "⠦", "⠲", "⠳", "⠓", "⠙", "⠘", "⠘", "⠈", "⠈", "⠈", "⠘", "⠘", "⠸", "⠴", "⠦", "⠇", "⠋", "⠙", "⠸", "⠴", "⠦", "⠇", "⠃", "⠃", "⠁", "⠁"
-    };
-#elif FRAMES_VARIANT == 6
-    const char* frames[] = {
-        "⠁", "⠃", "⠃", "⠋", "⠚", "⠞", "⠖", "⠴", "⠤", "⠤", "⠠", "⠠",
-        "⠠", "⠤", "⠤", "⠶", "⠛", "⠉", "⠉", "⠈", "⠈",
-        "⠈", "⠉", "⠉", "⠙", "⠓", "⠳", "⠲", "⠦", "⠆", "⠆", "⠄", "⠄",
-        "⠄", "⠆", "⠇", "⠿", "⠿", "⠸", "⠰", "⠠", "⠠",
-        "⠠", "⠰", "⠰", "⠴", "⠖", "⠞", "⠚", "⠋", "⠉", "⠉", "⠁", "⠁",
-        "⠁", "⠉", "⠉", "⠛", "⠶", "⠤", "⠤", "⠄", "⠄",
-        "⠄", "⠤", "⠤", "⠦", "⠲", "⠳", "⠓", "⠙", "⠘", "⠘", "⠈", "⠈",
-        "⠈", "⠘", "⠸", "⠿", "⠿", "⠇", "⠃", "⠁", "⠁"
-    };
-#endif
     const int framecount = sizeof(frames) / sizeof(*frames);
+    fmtval_t framecolors[] = {
+        FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   , FMTVAL_FG_BRIGHT_CYAN   ,
+        FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   , FMTVAL_FG_BRIGHT_BLUE   ,
+        FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA, FMTVAL_FG_BRIGHT_MAGENTA,
+        FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    , FMTVAL_FG_BRIGHT_RED    ,
+        FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        , FMTVAL_FG_YELLOW        ,
+        FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  , FMTVAL_FG_BRIGHT_GREEN  ,
+    };
+    const int framecolorcount = sizeof(framecolors) / sizeof(*framecolors);
 
     int res;
     struct timespec timeout;
     int frame = 0;
+    int framecolor = 1;
     cvts_cursor_hide();
     do {
-        printf("\r%s%s%s", FMT(FMTVAL_FG_BRIGHT_BLUE), frames[frame = frame % framecount], FMT(FMTVAL_FG_DEFAULT));
+        cvts_set_text_format(framecolors[framecolor]);
+        printf("\r%s%s", frames[frame], FMT(FMTVAL_FG_DEFAULT));
         cvts_cursor_right(9999);
         fflush(stdout);
-        frame++;
+        frame = (frame + 1) % framecount;
+        framecolor = (framecolor + 1) % framecolorcount;
     
         timespec_get(&timeout, TIME_UTC);
         timeout.tv_nsec += 50000000l;

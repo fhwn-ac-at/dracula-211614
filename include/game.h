@@ -13,6 +13,7 @@ typedef struct game_t {
     size_t width;           // The width of the playing field
     size_t height;          // The height of the playing field
     die_t die;              // The die to use while playing
+    bool exact_ending;      // Indicates wether the game must end by exactly landing on the last cell
     adjmat_t adjmat;        // The graph representing and connecting the cells of the playing field
 } game_t;
 

@@ -2,13 +2,42 @@
 
 #include "cvts.h"
 #include "loadingscreen.h"
+#include "tsrand48.h"
 
 #include <stdio.h>
+
+simulation_t simulation_create_empty() {
+    return (simulation_t){};
+}
+
+simulation_t simulation_create(simulator_t* simulator) {
+    if (!simulator)
+        return simulation_create_empty();
+    simulation_t sim = {
+        .simulator = simulator,
+        .soluses = array_create(simulator->soldsts.size, sizeof(size_t), 0)
+    };
+    size_t inituseval = 0;
+    for (size_t i = 0; i < sim.soluses.capacity; i++) {
+        if (!array_add(&sim.soluses, &inituseval)) {
+            simulation_free(&sim);
+            return simulation_create_empty();
+        }
+    }
+    return sim;
+}
+
+void simulation_free(simulation_t* simulaton) {
+    if (!simulaton)
+        return;
+    array_free(&simulaton->soluses, 0);
+    *simulaton = simulation_create_empty();
+}
 
 simulator_t simulator_create_empty() {
     return (simulator_t){ 
         .game = 0,
-        .sals = array_create(0, sizeof(snakeorladder_t), 0),
+        .soldsts = array_create(0, sizeof(size_t), 0),
         .solidxs = array_create(0, sizeof(optional_size_t), 0),
         .sims = array_create(0, sizeof(simulation_t), 0)
     };
@@ -20,7 +49,7 @@ simulator_t simulator_create(const game_t* game, size_t simcount) {
 
     simulator_t simulator = (simulator_t){
         .game = game,
-        .sals = array_create(0, sizeof(snakeorladder_t), 0),
+        .soldsts = array_create(0, sizeof(size_t), 0),
         .solidxs = array_create(game->adjmat.vertex_count, sizeof(optional_size_t), 0),
         .sims = array_create(simcount, sizeof(simulation_t), 0)
     };
@@ -30,22 +59,26 @@ simulator_t simulator_create(const game_t* game, size_t simcount) {
     for (size_t cell = 0; cell < adjmat->vertex_count; cell++) {
         // determine optional snake or ladder destination from current cell
         optional_size_t solidx = {};
-        snakeorladder_t sol = {};
+        size_t soldst = 0;
         for (size_t j = 0; !solidx.present && j < adjmat->vertex_count; j++) {
             if (adjmat->edges[cell * adjmat->vertex_count + j] > 0) {
-                solidx = (optional_size_t){ true, simulator.sals.size };
-                sol = (snakeorladder_t){ cell, j };
+                solidx = (optional_size_t){ true, simulator.soldsts.size };
+                soldst = j;
             }
         }
         // add snake or ladder index for current cell to solidxs array and if present add snake or ladder destination to soldsts array
-        if (!array_add(&simulator.solidxs, &solidx) || (solidx.present && !array_add(&simulator.sals, &sol)))
+        if (!array_add(&simulator.solidxs, &solidx) || (solidx.present && !array_add(&simulator.soldsts, &soldst)))
             simulator_free(&simulator);
     }
 
     // initialize simulations
-    for (size_t i = 0; i < simcount; i++)
-        if (!array_add(&simulator.sims, &(simulation_t){ .simulator = &simulator }))
+    for (size_t i = 0; i < simcount; i++) {
+        simulation_t sim = simulation_create(&simulator);
+        if (!array_add(&simulator.sims, &sim)) {
+            simulation_free(&sim);
             simulator_free(&simulator);
+        }
+    }
 
     return simulator;
 }
@@ -53,9 +86,9 @@ simulator_t simulator_create(const game_t* game, size_t simcount) {
 void simulator_free(simulator_t* simulator) {
     if (!simulator)
         return;
-    array_free(&simulator->sals);
-    array_free(&simulator->solidxs);
-    array_free(&simulator->sims);
+    array_free(&simulator->soldsts, 0);
+    array_free(&simulator->solidxs, 0);
+    array_free(&simulator->sims, (element_fn_t)simulation_free);
     *simulator = simulator_create_empty();
 }
 
@@ -63,7 +96,7 @@ void simulate(const game_t* game, size_t simcount) {
     // create simulator and loading screen
     simulator_t simulator = simulator_create(game, simcount);
     #ifdef DEBUG
-    simulator_print(&simulator);
+    simulator_print(&simulator, 0, false);
     #endif
     loadingscreen_t loadscreen = loadingscreen_create();
 
@@ -106,6 +139,10 @@ void simulate(const game_t* game, size_t simcount) {
     // stop rendering loading screen
     loadingscreen_stop(&loadscreen);
 
+#ifdef DEBUG
+    simulator_print(&simulator, 0, false);
+#endif
+
     // free simulator and loading screen
     loadingscreen_destroy(&loadscreen);
     simulator_free(&simulator);
@@ -114,77 +151,130 @@ void simulate(const game_t* game, size_t simcount) {
 int simulation_run(simulation_t* simulation) {
     if (!simulation)
         return 1;
-    
-    // TODO implement the simulation of a game
-    
+
+    // define helper variables
+    const simulator_t* const simulator = simulation->simulator;
+    const game_t* const game = simulator->game;
+    const size_t lastcell = game->adjmat.vertex_count;
+
+    // seed thread local rand48 random number generator for the die
+    tsnewseed48();
+
+    // start with player position outside the playing field (1 based index, i.e. first cell has index 1)
+    simulation->playerpos = 0;
+    while (simulation->playerpos != lastcell && simulation->dices < SIMULATION_DICE_LIMIT) {
+        // roll the die
+        size_t side = dice(&game->die);
+        simulation->dices++;
+        // end game if it should end
+        if (simulation->playerpos + side == lastcell || (!game->exact_ending && simulation->playerpos + side > lastcell)) {
+            simulation->playerpos = lastcell;
+            break;
+        } else if (simulation->playerpos + side > lastcell) {
+            continue;
+        }
+        // move player
+        simulation->playerpos += side;
+        // check for presence of snake or ladder (0 based index, hence playerpos - 1)
+        const optional_size_t* const solidx = array_getconst(&simulator->solidxs, simulation->playerpos - 1);
+        if (solidx->present) {
+            // use snake or ladder
+            simulation->playerpos = *(const size_t*)array_getconst(&simulator->soldsts, solidx->value) + 1;
+            // track usage of snake or ladder
+            (*(size_t*)array_get(&simulation->soluses, solidx->value))++;
+        }
+    }
+    // check if game was aborted due to reaching the dice limit before the game ended
+    if (simulation->dices == SIMULATION_DICE_LIMIT && simulation->playerpos != lastcell)
+        simulation->aborted = true;
+
     return 0;
 }
 
-void simulator_print(const simulator_t* simulator) {
+void simulator_print(const simulator_t* simulator, uint32_t indent, bool indentfirst) {
     if (!simulator) {
-        printf("simulator = %s\n", (char*)0);
+        printf("%*ssimulator = %s\n", indentfirst ? indent : 0, "", (char*)0);
         return;
     }
     printf(
-        "simulator = {\n"
-        "  game = game_t @ %p,\n"
-        "  sals = [%lu] {",
-        simulator->game,
-        simulator->sals.size
+        "%*ssimulator = {\n"
+        "%*s  game    = game_t @ %p,\n"
+        "%*s  soldsts = [%lu] {",
+        indentfirst ? indent : 0, "",
+        indent, "", simulator->game,
+        indent, "", simulator->soldsts.size
     );
-    if (simulator->sals.size != 0) {
+    if (simulator->soldsts.size != 0) {
         printf("\n");
-        for (size_t i = 0; i < simulator->sals.size; i++) {
-            const snakeorladder_t* sol = array_getconst(&simulator->sals, i);
-            printf("    [%lu] %lu-%lu%s\n", i, sol->src, sol->dst, i != simulator->sals.size - 1 ? "," : "");
+        for (size_t i = 0; i < simulator->soldsts.size; i++) {
+            const size_t* soldst = array_getconst(&simulator->soldsts, i);
+            printf("%*s    [%lu] %lu%s\n", indent, "", i, *soldst, i != simulator->soldsts.size - 1 ? "," : "");
         }
-        printf("  ");
+        printf("%*s  ", indent, "");
     }
     printf(
-        "},\n"
-        "  solidxs = [%lu] {",
-        simulator->solidxs.size
+        "%*s},\n"
+        "%*s  solidxs = [%lu] {",
+        indent, "",
+        indent, "", simulator->solidxs.size
     );
     if (simulator->solidxs.size != 0) {
         printf("\n");
         for (size_t i = 0; i < simulator->solidxs.size; i++) {
             const optional_size_t* idx = array_getconst(&simulator->solidxs, i);
-            printf("    [%lu] %s%lu%s%s\n", i, idx->present ? FMT(FMTVAL_FG_DEFAULT) : FMT(FMTVAL_FG_BRIGHT_BLACK), idx->value, FMT(FMTVAL_FG_DEFAULT), i != simulator->solidxs.size - 1 ? "," : "");
+            printf("%*s    [%lu] %s%lu%s%s\n", indent, "", i, idx->present ? FMT(FMTVAL_FG_DEFAULT) : FMT(FMTVAL_FG_BRIGHT_BLACK), idx->value, FMT(FMTVAL_FG_DEFAULT), i != simulator->solidxs.size - 1 ? "," : "");
         }
-        printf("  ");
+        printf("%*s  ", indent, "");
     }
     printf(
-        "},\n"
-        "  sims = [%lu] {",
-        simulator->sims.size
+        "%*s},\n"
+        "%*s  sims    = [%lu] {",
+        indent, "",
+        indent, "", simulator->sims.size
     );
     if (simulator->sims.size != 0) {
         printf("\n");
         for (size_t i = 0; i < simulator->sims.size; i++) {
-            const simulation_t* sim = array_getconst(&simulator->sims, i);
-            printf(
-                "    [%lu] {\n"
-                "      thread  = %lu,\n"
-                "      aborted = %s,\n"
-                "      dices   = %lu\n"
-                "      soluses = [%lu] {",
-                i,
-                (uint64_t)sim->thread,
-                sim->aborted ? "true" : "false",
-                sim->dices,
-                sim->soluses.size
-            );
-            if (sim->soluses.size != 0) {
-                printf("\n");
-                for (size_t i = 0; i < sim->soluses.size; i++) {
-                    const size_t* uses = array_getconst(&sim->soluses, i);
-                    printf("        [%lu] %lu%s\n", i, *uses, i != simulator->solidxs.size - 1 ? "," : "");
-                }
-                printf("      ");
-            }
-            printf("},\n    },\n");
+            printf("%*s    [%lu] ", indent, "", i);
+            simulation_print(array_getconst(&simulator->sims, i), indent + 4, false);
         }
-        printf("  ");
+        printf("%*s  ", indent, "");
     }
-    printf("}\n}\n");
+    printf("}\n%*s}\n", indent, "");
+}
+
+void simulation_print(const simulation_t* simulation, uint32_t indent, bool indentfirst) {
+    if (!simulation) {
+        printf("%*ssimulation = %s\n", indentfirst ? indent : 0, "", (char*)0);
+        return;
+    }
+    printf(
+        "%*ssimulation = {\n"
+        "%*s  simulator = simulator_t @ %p,\n"
+        "%*s  thread    = %lu,\n"
+        "%*s  aborted   = %s,\n"
+        "%*s  dices     = %lu,\n"
+        "%*s  playerpos = %lu,\n"
+        "%*s  soluses   = [%lu] {",
+        indentfirst ? indent : 0, "",
+        indent, "", simulation->simulator,
+        indent, "", simulation->thread,
+        indent, "", simulation->aborted ? "true" : "false",
+        indent, "", simulation->dices,
+        indent, "", simulation->playerpos,
+        indent, "", simulation->soluses.size
+    );
+    if (simulation->soluses.size != 0) {
+        printf("\n");
+        for (size_t i = 0; i < simulation->simulator->solidxs.size; i++) {
+            const optional_size_t* idx = (optional_size_t*)array_getconst(&simulation->simulator->solidxs, i);
+            if (idx->present) {
+                snakeorladder_t sol = (snakeorladder_t){ i + 1, *(size_t*)array_getconst(&simulation->simulator->soldsts, idx->value) + 1 };
+                const size_t* uses = array_getconst(&simulation->soluses, idx->value);
+                printf("%*s    [%lu] %lu-%lu %lu%s\n", indent, "", idx->value, sol.src, sol.dst, *uses, idx->value != simulation->soluses.size - 1 ? "," : "");
+            }
+        }
+        printf("%*s  ", indent, "");
+    }
+    printf("}\n%*s}\n", indent, "");
 }

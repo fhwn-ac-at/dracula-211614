@@ -61,7 +61,7 @@ typedef struct cli_args_t {
     bool exact_ending;                      // Enables/Disables the exact ending. The player must land exactly in the ending cell to end the game.
     distribution_t distribution;            // The distribution of randomly generated values
     size_t iterations;                      // The number of times the game should be simulated
-    array_t snakesandladders;    // The snakes and ladders specified in the cli arguments and/or in the config file
+    array_t snakesandladders;               // The snakes and ladders specified in the cli arguments and/or in the config file (element type: snakeorladder_t)
 } cli_args_t;
 
 /**
@@ -194,9 +194,13 @@ cli_configfile_args_t cli_read_configfile(const char* filepath);
  * If not given a new string is allocated and ownership is transferred to the user.
  * @param pos (optional) The file position. If it is given it is used to error messaging when an error occurs.
  * @param error (optional) The address the error code should be stored at. If not given the error code is not stored.
+ * 
  * - 0 successfully read argument.
+ * 
  * - 1 unable to add character to the argument
+ * 
  * - 2 argument ended in escape mode
+ * 
  * - 3 argument ended with unclosed quoted section
  * @return The read argument value, 0 if no file was given or it does not contain a value at/after the
  * current file position or if the value ended in escape mode or with an unclosed quoted section.
