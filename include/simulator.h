@@ -1,11 +1,9 @@
 #pragma once
 
 #include "game.h"
-#include "snakesandladders.h"
+#include "snakeorladder.h"
 
 #include <threads.h>
-
-#define SIMULATION_DICE_LIMIT 10000lu      // The maximum number of times a game simulation is allowed to dice before aborting execution. (The simulation potentially ran into an infinite loop)
 
 /**
  * Struct for an optional size_t. Can optionally have value of type size_t.
@@ -20,6 +18,7 @@ typedef struct optional_size_t {
  */
 typedef struct simulator_t {
     const game_t* game;             // The game simulations should be run on
+    size_t dicelimit;               // The maximum allowed number of dices in a simulation before resigning if the game wasn't won yet.
     array_t soldsts;                // The destinations of the snakes and ladders of the game (element type: size_t)
     array_t solidxs;                // Maps each cell index to the index of it's corresponding snake or ladder in soldsts array (element type: optional_size_t)
     array_t sims;                   // The array of simulations (element simulation_t)
@@ -68,9 +67,10 @@ simulator_t simulator_create_empty();
  * Creates a new simulator for the given game with the given simulation count.
  * @param game The game that should be simulated by simulations managed by the created simulator.
  * @param simcount The number of simulations that should be run on the specified game.
+ * @param dicelimit The maximum allowed number of dices in a simulation before resigning if the game wasn't won yet.
  * @return The created simulator, an empty simulator if no game was given or simcount is 0.
  */
-simulator_t simulator_create(const game_t* game, size_t simcount);
+simulator_t simulator_create(const game_t* game, size_t simcount, size_t dicelimit);
 
 /**
  * Frees the given simulator freeing it's soldsts, solidxs and sims arrays and resetting to an empty simulator.
@@ -85,7 +85,7 @@ void simulator_free(simulator_t* simulator);
  * @param simcount The number of simulations that should be run.
  * @return The simulator that ran the simulations.
  */
-simulator_t simulate(const game_t* game, size_t simcount);
+simulator_t simulate(const game_t* game, size_t simcount, size_t dicelimit);
 
 /**
  * Runs the given simulation. The simulation holds a reference to the simulator the

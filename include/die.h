@@ -42,3 +42,17 @@ bool die_isempty(const die_t* die);
  * @return The diced side.
  */
 size_t dice(const die_t* die);
+
+/**
+ * Uses the given die the given number of times and prints a summary of the diced sides.
+ * @param die The die that should be used to dice.
+ * @param iterations The number of times the die should be diced.
+ */
+void simulate_dices(const die_t* die, size_t iterations);
+
+/**
+ * Prints the given die.
+ * @param die The die that should be printed.
+ * @param barlength The length of the longest printed bar.
+ */
+void die_print(const die_t* die, size_t barlength);

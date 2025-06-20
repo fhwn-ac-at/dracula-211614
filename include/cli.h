@@ -2,7 +2,7 @@
 
 #include "distribution.h"
 #include "game.h"
-#include "snakesandladders.h"
+#include "snakeorladder.h"
 
 #include <getopt.h>
 #include <limits.h>
@@ -26,6 +26,12 @@
 #define OPTVAL_ITERATIONS_DEFAULT 1000ul                                    // The default number of times the game should be simulated
 #define OPTVAL_ITERATIONS_MIN 1ul                                           // The minimum number of times the game should be simulated
 #define OPTVAL_ITERATIONS_MAX ULONG_MAX                                     // The maximum number of times the game should be simulated
+#define OPTVAL_DICE_LIMIT_DEFAULT 10000ul                                   // The default number of times a simulation is allowed to dice before resigning if the game wasn't won yet
+#define OPTVAL_DICE_LIMIT_MIN 1ul                                           // The minimum number of times a simulation is allowed to dice before resigning if the game wasn't won yet
+#define OPTVAL_DICE_LIMIT_MAX ULONG_MAX                                     // The maximum number of times a simulation is allowed to dice before resigning if the game wasn't won yet
+#define OPTVAL_BAR_LENGTH_DEFAULT 50ul                                      // The default length of the bars that visualize the probability of each side of the used die
+#define OPTVAL_BAR_LENGTH_MIN 1ul                                           // The minimum length of the bars that visualize the probability of each side of the used die
+#define OPTVAL_BAR_LENGTH_MAX ULONG_MAX                                     // The maximum length of the bars that visualize the probability of each side of the used die
 
 /**
  * Flags for every cli argument setting.
@@ -40,7 +46,9 @@ typedef enum cli_args_flag_t {
     CLIAFLAG_EXACT_ENDING     = 1 << 5,
     CLIAFLAG_DISTRIBUTION     = 1 << 6,
     CLIAFLAG_ITERATIONS       = 1 << 7,
-    CLIAFLAG_SNAKESANDLADDERS = 1 << 8,
+    CLIAFLAG_DICE_LIMIT       = 1 << 8,
+    CLIAFLAG_BAR_LENGTH       = 1 << 9,
+    CLIAFLAG_SNAKESANDLADDERS = 1 << 10,
 } cli_args_flag_t;
 
 /**
@@ -61,6 +69,8 @@ typedef struct cli_args_t {
     bool exact_ending;                      // Enables/Disables the exact ending. The player must land exactly in the ending cell to end the game.
     distribution_t distribution;            // The distribution of randomly generated values
     size_t iterations;                      // The number of times the game should be simulated
+    size_t dicelimit;                       // The number of times a simulation is allowed to dice before resigning if the game wasn't won yet
+    size_t barlength;                       // The length of the bars that visualize the probability of each side of the used die
     array_t snakesandladders;               // The snakes and ladders specified in the cli arguments and/or in the config file (element type: snakeorladder_t)
 } cli_args_t;
 

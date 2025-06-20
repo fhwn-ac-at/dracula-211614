@@ -27,7 +27,7 @@ game_t game_setup(cli_args_t* cli_args) {
         fprintf(stderr, "%serror:%s unable to create die from distribution.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT));
         exit(1);
     }
-    
+
     // set if game must have exact ending
     game.exact_ending = cli_args->exact_ending;
 
@@ -37,11 +37,11 @@ game_t game_setup(cli_args_t* cli_args) {
         const snakeorladder_t* sol = array_getconst(sals, i);
         // check if sol starts or ends in a cell outside the playing field
         if (sol->src == 0 || sol->src > cellcount) {
-            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. starts in non-existant cell >%lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount - 1);
+            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. starts in non-existant cell >%lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount);
             exit(1);
         }
         if (sol->dst == 0 || sol->dst > cellcount) {
-            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. ends in a non-existant cell >%lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount - 1);
+            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. ends in a non-existant cell >%lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount);
             exit(1);
         }
         // check if sol starts and ends in the same cell as itself
@@ -51,11 +51,11 @@ game_t game_setup(cli_args_t* cli_args) {
         }
         // check if sol starts or ends in the last cell of the playing field
         if (sol->src == cellcount) {
-            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. starts in the last cell %lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount - 1);
+            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. starts in the last cell %lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount);
             exit(1);
         }
         if (sol->dst == cellcount) {
-            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. ends in the last cell %lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount - 1);
+            fprintf(stderr, "%serror:%s invalid %s %lu-%lu. ends in the last cell %lu.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), sol->src > sol->dst ? "snake" : "ladder", sol->src, sol->dst, cellcount);
             exit(1);
         }
         // check if sol overlaps with some other already existing sol (start/ends in the same cell as other sol)
@@ -102,7 +102,8 @@ void game_print(const game_t* game) {
     for (size_t i = 0; i < game->width; i++)
         printf("qqqqq");
     printf("qk\x1b(B\n");
-    for (size_t i = game->width * game->height; i > 0; i--) {
+    size_t cellcount = game->width * game->height;
+    for (size_t i = cellcount; i > 0; i--) {
         // if the current row index is even print row in reverse order
         size_t idx = ((i-1) / game->width) % 2 == 0
             ? (((i-1) / game->width + 1) * game->width - 1) - ((i-1) % game->width)
@@ -121,7 +122,9 @@ void game_print(const game_t* game) {
         if ((i-1) % game->width == game->width - 1)
             printf("%5lu \x1b(0x\x1b(B", idx + 1);
         // print destination cell index for current edge
-        if (hasedge == 0)
+        if (idx == cellcount - 1)
+            printf("%s", FMT(FMTVAL_FG_BRIGHT_RED));
+        else if (hasedge == 0)
             printf("%s", FMT(FMTVAL_FG_BRIGHT_BLACK));
         else if (hasedge == 1)
             printf("%s", FMT(FMTVAL_FG_BRIGHT_YELLOW));

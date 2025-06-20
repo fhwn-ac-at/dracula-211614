@@ -30,13 +30,17 @@ typedef struct stats_t {
     size_t sims;                    // The number of run simulations
     size_t wins;                    // The number of won games
     size_t losses;                  // The number of lost games (forfeited due to reaching the dice limit without winning)
-    double winlossratio;            // The number of wins relative to the number of losses (wins / losses)
+    double winrate;                 // The relative number of wins (wins / sims)
+    double lossrate;                // The relative number of losses (losses / sims)
+    size_t dicelimit;               // The maximum allowed number of dices in a simulation before resigning if the game wasn't won yet.
     valstats_t dices;               // The summary statistics about the dices in all simulations
     array_t shortestdices;          // The shortest dice sequence to lead to a win out of all simulations (element type: size_t)
-    array_t sals;                   // Array of summary statistics about each individual snake or ladder in all simulations (element type: solstats_t)
     valstats_t salsuses;            // The summary statistics about the number of used snakes and ladders in all simulations.
     valstats_t snakesuses;          // The summary statistics about the number of used snakes in all simulations.
     valstats_t laddersuses;         // The summary statistics about the number of used ladders in all simulations.
+    double snakesuserate;           // The relative number of snake uses out of all snakes and ladders uses.
+    double laddersuserate;          // The relative number of ladders uses out of all snakes and ladders uses.
+    array_t sals;                   // Array of summary statistics about each individual snake or ladder in all simulations (element type: solstats_t)
 } stats_t;
 
 /**

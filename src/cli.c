@@ -60,36 +60,42 @@ cli_args_t cli_parse_args(int argc, char* argv[], int initoptind, bool isconfigf
         .exact_ending = OPTVAL_EXACT_ENDING_DEFAULT,
         .distribution = OPTVAL_DISTRIBUTION_DEFAULT,
         .iterations = OPTVAL_ITERATIONS_DEFAULT,
+        .dicelimit = OPTVAL_DICE_LIMIT_DEFAULT,
+        .barlength = OPTVAL_BAR_LENGTH_DEFAULT,
         .snakesandladders = array_create(0, sizeof(snakeorladder_t), 0)
     };
     assetmanager_add(&args, (deallocator_fn_t)cli_args_free);
 
     // define options
     const char* optstring;
-    struct option longopts[9];
+    struct option longopts[11];
     if (isconfigfile) {
         // disable option -c --config-file if args came from a config file
-        optstring = ":hx:y:s:ed:i:";
-        longopts[0] = (struct option){ "help"        , 0, 0, 'h' };
-        longopts[1] = (struct option){ "width"       , 1, 0, 'x' };
-        longopts[2] = (struct option){ "height"      , 1, 0, 'y' };
-        longopts[3] = (struct option){ "die-sides"   , 1, 0, 's' };
-        longopts[4] = (struct option){ "exact-ending", 0, 0, 'e' };
-        longopts[5] = (struct option){ "distribution", 1, 0, 'd' };
-        longopts[6] = (struct option){ "iterations"  , 1, 0, 'i' };
-        longopts[7] = (struct option){ 0             , 0, 0, 0   };
-        longopts[8] = (struct option){ 0             , 0, 0, 0   };
+        optstring = ":hx:y:s:ed:l:i:b:";
+        longopts[ 0] = (struct option){ "help"        , 0, 0, 'h' };
+        longopts[ 1] = (struct option){ "width"       , 1, 0, 'x' };
+        longopts[ 2] = (struct option){ "height"      , 1, 0, 'y' };
+        longopts[ 3] = (struct option){ "die-sides"   , 1, 0, 's' };
+        longopts[ 4] = (struct option){ "exact-ending", 0, 0, 'e' };
+        longopts[ 5] = (struct option){ "distribution", 1, 0, 'd' };
+        longopts[ 6] = (struct option){ "iterations"  , 1, 0, 'i' };
+        longopts[ 7] = (struct option){ "dice-limit"  , 1, 0, 'l' };
+        longopts[ 8] = (struct option){ "bar-length"  , 1, 0, 'b' };
+        longopts[ 9] = (struct option){ 0             , 0, 0, 0   };
+        longopts[10] = (struct option){ 0             , 0, 0, 0   };
     } else {
-        optstring = ":hc:x:y:s:ed:i:";
-        longopts[0] = (struct option){ "help"        , 0, 0, 'h' };
-        longopts[1] = (struct option){ "config-file" , 1, 0, 'c' };
-        longopts[2] = (struct option){ "width"       , 1, 0, 'x' };
-        longopts[3] = (struct option){ "height"      , 1, 0, 'y' };
-        longopts[4] = (struct option){ "die-sides"   , 1, 0, 's' };
-        longopts[5] = (struct option){ "exact-ending", 0, 0, 'e' };
-        longopts[6] = (struct option){ "distribution", 1, 0, 'd' };
-        longopts[7] = (struct option){ "iterations"  , 1, 0, 'i' };
-        longopts[8] = (struct option){ 0             , 0, 0, 0   };
+        optstring = ":hc:x:y:s:ed:l:i:b:";
+        longopts[ 0] = (struct option){ "help"        , 0, 0, 'h' };
+        longopts[ 1] = (struct option){ "config-file" , 1, 0, 'c' };
+        longopts[ 2] = (struct option){ "width"       , 1, 0, 'x' };
+        longopts[ 3] = (struct option){ "height"      , 1, 0, 'y' };
+        longopts[ 4] = (struct option){ "die-sides"   , 1, 0, 's' };
+        longopts[ 5] = (struct option){ "exact-ending", 0, 0, 'e' };
+        longopts[ 6] = (struct option){ "distribution", 1, 0, 'd' };
+        longopts[ 7] = (struct option){ "iterations"  , 1, 0, 'i' };
+        longopts[ 8] = (struct option){ "dice-limit"  , 1, 0, 'l' };
+        longopts[ 9] = (struct option){ "bar-length"   , 1, 0, 'b' };
+        longopts[10] = (struct option){ 0             , 0, 0, 0   };
     }
     // parse options
     cli_parse_opts(&args, argc, argv, initoptind, optstring, longopts);
@@ -200,6 +206,10 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                 }
                 if (config_cli_args.setargsflags & CLIAFLAG_ITERATIONS)
                     cli_args->iterations = config_cli_args.iterations;
+                if (config_cli_args.setargsflags & CLIAFLAG_DICE_LIMIT)
+                    cli_args->dicelimit = config_cli_args.dicelimit;
+                if (config_cli_args.setargsflags & CLIAFLAG_BAR_LENGTH)
+                    cli_args->barlength = config_cli_args.barlength;
                 if (config_cli_args.setargsflags & CLIAFLAG_SNAKESANDLADDERS) {
                     if (cli_args->snakesandladders.size == 0) {
                         cli_args->snakesandladders = config_cli_args.snakesandladders;
@@ -284,6 +294,18 @@ cli_args_t* cli_parse_opts(cli_args_t* cli_args, int argc, char* argv[], int ini
                 cli_args->iterations = cli_parse_opt_uint64(opt, OPTVAL_ITERATIONS_MIN, OPTVAL_ITERATIONS_MAX);
                 break;
             }
+            case 'l':
+            {
+                cli_args->setargsflags |= CLIAFLAG_DICE_LIMIT;
+                cli_args->dicelimit = cli_parse_opt_uint64(opt, OPTVAL_DICE_LIMIT_MIN, OPTVAL_DICE_LIMIT_MAX);
+                break;
+            }
+            case 'b':
+            {
+                cli_args->setargsflags |= CLIAFLAG_BAR_LENGTH;
+                cli_args->barlength = cli_parse_opt_uint64(opt, OPTVAL_BAR_LENGTH_MIN, OPTVAL_BAR_LENGTH_MAX);
+                break;
+            }
             case ':':
             {
                 fprintf(stderr, "%serror:%s missing value for option '%c'.\n", FMT(FMTVAL_FG_BRIGHT_RED), FMT(FMTVAL_FG_DEFAULT), optopt);
@@ -342,8 +364,12 @@ void cli_args_print(const cli_args_t* cli_args) {
     printf("}\n  },\n");
     printf(
         "  iterations       = %lu,\n"
+        "  dicelimit        = %lu,\n"
+        "  barlength        = %lu,\n"
         "  snakesandladders = [%lu] {",
         cli_args->iterations,
+        cli_args->dicelimit,
+        cli_args->barlength,
         cli_args->snakesandladders.size
     );
     if (cli_args->snakesandladders.size != 0) {
@@ -417,6 +443,10 @@ void cli_help() {
         "                             - downstairs    A distribution with it's last weight being 1 and each previous weight being incremented by 1.\n"
         "                                              e.g. for %ss%s = 6 the weights are 6,5,4,3,2,1\n"
         "  -i, --iterations %sval%s      The number of times the game should be simulated which must be an integer value >= %lu. The default is %lu.\n"
+        "  -l, --dice-limit %sval%s      The number of times a simulation is allowed to dice before resigning if the game was not won yet\n"
+        "                             which must be an integer value >= %lu. The default is %lu.\n"
+        "  -b, --bar-length %sval%s      The length of the bars that visualize the probability of each side of the used die\n"
+        "                             which must be an integer value >= %lu. The default is %lu.\n"
         "\n",
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
@@ -445,9 +475,11 @@ void cli_help() {
         FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE), FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
         FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
-        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
-        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT),
-        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_ITERATIONS_MIN, OPTVAL_ITERATIONS_DEFAULT
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_UNDERLINE), FMT(FMTVAL_NO_UNDERLINE),
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_ITERATIONS_MIN, OPTVAL_ITERATIONS_DEFAULT,
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_DICE_LIMIT_MIN, OPTVAL_DICE_LIMIT_DEFAULT,
+        FMT(FMTVAL_FG_BRIGHT_BLACK), FMT(FMTVAL_FG_DEFAULT), OPTVAL_BAR_LENGTH_MIN, OPTVAL_BAR_LENGTH_DEFAULT
     );
 }
 

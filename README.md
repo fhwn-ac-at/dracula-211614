@@ -1,15 +1,30 @@
 # Snakes and Ladders Simulator
 
-This program simulates the board game _Snakes and Ladders_.
+This program simulates the board game **Snakes and Ladders**.
+
+## Build
+
+The program can be compiled via the provided Makefile in the root directory of the project
+
+```
+make
+```
+
+or by calling the clang compiler directly with the following command.
+
+```
+clang -Wall -Wextra -Werror --std=c17 -D_XOPEN_SOURCE=500 -Iinclude -DVERSION_MAJOR=1 -DVERSION_MINOR=0 -DVERSION_PATCH=0 -UDEBUG src/*.c
+```
 
 ## Command Line Interface
 
 The C library `getopt.h` is used for processing command line arguments.
 
 When running the program with the `-h` or `--help` option a help text is printed and the program terminates.
+It includes the program version, usage and description of the available options and values.
 
 ```
-sals v0.2.2
+sals v1.0.0
 Usage: sals [options] <snake-or-ladder>...
 
   <snake-or-ladder>         A string containing two positive integers separated by a '-' character. Format: a-b.
@@ -51,14 +66,14 @@ options:
                              - twodice       The distribution that arises when using two uniform and equal dice with s/2 sides each
                                               and using the sum of the two diced values as overall dice result.
                                               e.g. for s = 12 (two uniform dice with s/2 = 6 sides each)
-                                                   SUM │ 1  2  3  4  5  6
+                                                   SUM │ 1  2  3  4  5  6 
                                                    ────┼───────────────────
-                                                     1 │ 2  3  4  5  6  7
-                                                     2 │ 3  4  5  6  7  8
-                                                     3 │ 4  5  6  7  8  9
-                                                     4 │ 5  6  7  8  9 10
-                                                     5 │ 6  7  8  9 10 11
-                                                     6 │ 7  8  9 10 11 12
+                                                     1 │ 2  3  4  5  6  7 
+                                                     2 │ 3  4  5  6  7  8 
+                                                     3 │ 4  5  6  7  8  9 
+                                                     4 │ 5  6  7  8  9 10 
+                                                     5 │ 6  7  8  9 10 11 
+                                                     6 │ 7  8  9 10 11 12 
                                                    // count how often side (sum) is hit to determine their weights.
                                                    // these are all possible ways to dice each value (sum) when using two uniform 6-sided dice
                                                    -> distribution weights: 0,1,2,3,4,5,6,5,4,3,2,1
@@ -67,7 +82,42 @@ options:
                              - downstairs    A distribution with it's last weight being 1 and each previous weight being incremented by 1.
                                               e.g. for s = 6 the weights are 6,5,4,3,2,1
   -i, --iterations val      The number of times the game should be simulated which must be an integer value >= 1. The default is 1000.
+  -l, --dice-limit val      The number of times a simulation is allowed to dice before resigning if the game was not won yet
+                             which must be an integer value >= 1. The default is 10000.
+  -b, --bar-length val      The length of the bars that visualize the probability of each side of the used die
+                             which must be an integer value >= 1. The default is 50.
 ```
+
+## Game
+
+The player starts a game of **Snakes and Ladders** outside the playing field. They repeatedly roll a dice which is the number of steps they take forward on the board. The first dice places the player into the cell with the same number as the diced value. Every following dice advances the player on the field by the diced value. The game ends when the player reaches the last cell. If an exact ending is required the player must land exactly on the last cell, otherwise the player is allowed to overshoot the ending cell.
+
+The field can contain **snakes**, which propel the player to a specific cell before the current cell, and **ladders**, which propel the player to a specific cell after the current cell. If the player lands on a cell where a snake or ladder starts they must use the snake or ladder. Snakes and ladders are not allowed to overlap or start or end in the last cell of the playing field.
+
+An arbitrary die can be used while playing. The number of sides the die has can be specified via the `-s, --die-sides` option and the distribution (i.e. the probability of dicing specific sides) can be set via the `-d, --distribution` option.
+
+## Simulation
+
+The game that was defined via cli arguments and/or a configuration file is simulated the number of times defined by the `-i, --iterations` option. The simulator is multi-threaded running all simulations simultaneously in separate threads. Each simulation plays the game and tracks it's diced values and usages of snakes and ladders. If the simulation diced the number of times specified via the `-l, --dice-limit` option and still has not won the game the simulation resigns and notes that the game was not won. This dice limit ensures that simulations that potentially ran into infinite loops (e.g. due to the game being unwinnable because of the snakes and ladders and used die) don't run endlessly.
+
+In case the simulations take a long time to finish a loading animation is displayed to both make the waiting a bit more interesting and indicate that the program is still actively running the simulations.
+
+## Statistical Analysis
+
+The ran simulations are statistically analyzed determining a variety of informative values. They include the total number of dices, wins, losses (resigned simulations), the shortest dice sequence that lead to a win, the usages of snakes and ladders and more. The statistics are printed in an easily digestible format.
+
+## Example Configuration Files
+
+The `examples` folder in the project's root directory contains a multitude of different potentially interesting configuration files. A configuration file can be used by setting the `-c, --config-file` option to the file's path.
+
+```
+./sals -c funkyargs.sals
+```
+
+The `examples` directory contains general examples as well as more specific examples in a respective subfolder.
+
+- The `examples/distributions` folder showcases the use of various ways to specify the die distribution, using custom weight sequence to specify the weight of each individual side of the die or using a predefined preset which automatically generate a weight sequence of a specific type.
+- The `examples/invalid` folder showcases invalid arguments, including unknown options, missing option values, invalid numbers, distributions and snakes and ladders.
 
 ## Assignment: 6th Assignment
 

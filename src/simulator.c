@@ -40,18 +40,20 @@ void simulation_free(simulation_t* simulation) {
 simulator_t simulator_create_empty() {
     return (simulator_t){ 
         .game = 0,
+        .dicelimit = 0,
         .soldsts = array_create(0, sizeof(size_t), 0),
         .solidxs = array_create(0, sizeof(optional_size_t), 0),
         .sims = array_create(0, sizeof(simulation_t), 0)
     };
 }
 
-simulator_t simulator_create(const game_t* game, size_t simcount) {
+simulator_t simulator_create(const game_t* game, size_t simcount, size_t dicelimit) {
     if (!game || simcount == 0)
         return simulator_create_empty();
 
     simulator_t simulator = (simulator_t){
         .game = game,
+        .dicelimit = dicelimit,
         .soldsts = array_create(0, sizeof(size_t), 0),
         .solidxs = array_create(game->adjmat.vertex_count, sizeof(optional_size_t), 0),
         .sims = array_create(simcount, sizeof(simulation_t), 0)
@@ -95,9 +97,9 @@ void simulator_free(simulator_t* simulator) {
     *simulator = simulator_create_empty();
 }
 
-simulator_t simulate(const game_t* game, size_t simcount) {
+simulator_t simulate(const game_t* game, size_t simcount, size_t dicelimit) {
     // create simulator and loading screen
-    simulator_t simulator = simulator_create(game, simcount);
+    simulator_t simulator = simulator_create(game, simcount, dicelimit);
     assetmanager_add(&simulator, (deallocator_fn_t)simulator_free);
     #ifdef DEBUG
     simulator_print(&simulator, 0, false);
@@ -167,7 +169,7 @@ int simulation_run(simulation_t* simulation) {
 
     // start with player position outside the playing field (1 based index, i.e. first cell has index 1)
     simulation->playerpos = 0;
-    while (simulation->playerpos != lastcell && simulation->dices.size < SIMULATION_DICE_LIMIT) {
+    while (simulation->playerpos != lastcell && simulation->dices.size < simulator->dicelimit) {
         // roll the die
         size_t side = dice(&game->die);
         array_add(&simulation->dices, &side);
@@ -190,7 +192,7 @@ int simulation_run(simulation_t* simulation) {
         }
     }
     // check if game was aborted due to reaching the dice limit before the game ended
-    if (simulation->dices.size == SIMULATION_DICE_LIMIT && simulation->playerpos != lastcell)
+    if (simulation->dices.size == simulator->dicelimit && simulation->playerpos != lastcell)
         simulation->aborted = true;
 
     return 0;
@@ -203,10 +205,12 @@ void simulator_print(const simulator_t* simulator, uint32_t indent, bool indentf
     }
     printf(
         "%*ssimulator = {\n"
-        "%*s  game    = game_t @ %p,\n"
-        "%*s  soldsts = [%lu] {",
+        "%*s  game      = game_t @ %p,\n"
+        "%*s  dicelimit =  %lu,\n"
+        "%*s  soldsts   = [%lu] {",
         indentfirst ? indent : 0, "",
         indent, "", simulator->game,
+        indent, "", simulator->dicelimit,
         indent, "", simulator->soldsts.size
     );
     if (simulator->soldsts.size != 0) {
@@ -219,7 +223,7 @@ void simulator_print(const simulator_t* simulator, uint32_t indent, bool indentf
     }
     printf(
         "%*s},\n"
-        "%*s  solidxs = [%lu] {",
+        "%*s  solidxs   = [%lu] {",
         indent, "",
         indent, "", simulator->solidxs.size
     );
@@ -233,7 +237,7 @@ void simulator_print(const simulator_t* simulator, uint32_t indent, bool indentf
     }
     printf(
         "%*s},\n"
-        "%*s  sims    = [%lu] {",
+        "%*s  sims      = [%lu] {",
         indent, "",
         indent, "", simulator->sims.size
     );
